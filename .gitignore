@@ -9,3 +9,4 @@ data.json
 .obsidian-cache/
 .wdio-logs/
 !test/e2e/stub-plugin/main.js
+.appium/

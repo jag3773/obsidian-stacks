@@ -10,11 +10,15 @@
 // Environment:
 //   OBSIDIAN_VERSIONS   app versions to test, default "latest" ("earliest" is minAppVersion)
 //   APPIUM_HOST, APPIUM_PORT  an Appium server to use instead of the one the service starts
+//   APPIUM_HOME          Appium's home folder with the driver, default .appium/ in the project
 import * as path from "node:path";
 import { env } from "node:process";
 import { androidVersions } from "./test/e2e/android-versions.mjs";
 
 const cacheDir = path.resolve(".obsidian-cache");
+// The project's own Appium home, where scripts/install-appium-driver.mjs installs the driver.
+// The Appium service passes the environment on to the Appium server it starts.
+env.APPIUM_HOME ||= path.resolve(".appium");
 
 // Beta versions aren't available for the Android app.
 // Android releases separately from desktop, so versions come from Android's own releases.
