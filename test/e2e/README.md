@@ -13,7 +13,7 @@ npm run test:e2e:mobile    # emulated mobile only
 
 The first run downloads Obsidian into `.obsidian-cache/` (ignored by git). On Linux without a display, run under `xvfb-run -a`. Choose versions with `OBSIDIAN_VERSIONS="1.10.0/latest latest/latest"` (app/installer pairs) and parallel Obsidian windows with `WDIO_MAX_INSTANCES`. Run one spec with, for example, `npm run test:e2e:desktop -- --spec test/e2e/specs/desktop/sync.e2e.ts`.
 
-The Android app needs the Android SDK and an emulator (AVD) named `obsidian_test`, plus Appium, which isn't installed by `npm ci`:
+The Android app needs the Android SDK and an emulator (AVD) named `obsidian_test`, plus Appium and its UiAutomator2 driver, which `npm ci` doesn't install. The deps script installs Appium into `node_modules` and the driver through `appium driver install`, into Appium's home folder (`~/.appium`, or `APPIUM_HOME`), the only place Appium looks for drivers:
 
 ```sh
 npm run test:e2e:android:deps
