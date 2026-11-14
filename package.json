@@ -11,7 +11,7 @@
     "test:e2e:desktop": "E2E_TARGET=desktop wdio run ./wdio.conf.mts",
     "test:e2e:mobile": "E2E_TARGET=mobile wdio run ./wdio.conf.mts",
     "test:e2e:android": "wdio run ./wdio.android.conf.mts",
-    "test:e2e:android:deps": "npm install --no-save appium@3.9.0 @wdio/appium-service@9.33.1 && (appium driver list --installed --json | grep -q '\"uiautomator2\"' || appium driver install --source=npm appium-uiautomator2-driver@8.7.3)",
+    "test:e2e:android:deps": "npm install --no-save appium@3.9.0 @wdio/appium-service@9.33.1 && node scripts/install-appium-driver.mjs",
     "typecheck:e2e": "tsc -p test/e2e/tsconfig.json",
     "test:e2e:config": "node --import tsx --test test/e2e/*.test.mts",
     "bbt-accuracy": "esbuild scripts/bbt-accuracy.ts --bundle --platform=node --format=esm --outfile=test-dist/bbt-accuracy.mjs --log-level=warning && node test-dist/bbt-accuracy.mjs",
