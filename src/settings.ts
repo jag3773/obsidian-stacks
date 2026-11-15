@@ -455,10 +455,10 @@ export class LibrarySettingTab extends PluginSettingTab {
 		if (!Platform.isDesktopApp) return;
 		text(
 			"Pre-extraction command (desktop)",
-			"Optional. Runs on a PDF before extraction, from the vault folder. {in} is the PDF, {out} the file to write; if {out} is written, it replaces the PDF.",
+			"Optional. Runs on a PDF before extraction, from the vault folder. {in} is the PDF, {out} the file to write; if {out} is written, it replaces the PDF. For example, Parabloom expands partial highlights to whole paragraphs. Give the program's full path.",
 			() => s.preExtractionCommand,
 			(v) => (s.preExtractionCommand = v),
-			"python3 scripts/expand_highlights.py {in} {out}"
+			"~/.cargo/bin/parabloom {in} {out}"
 		);
 
 		new Setting(containerEl).setName("Reading round trip (desktop)").setHeading();
