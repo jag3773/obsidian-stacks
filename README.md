@@ -33,7 +33,7 @@ Zotero has helped researchers collect, organize, and cite their work for years. 
 ## Available today
 
 - **Save a source by identifier.** Paste an ISBN, DOI, arXiv ID, or URL. Stacks looks up metadata, checks for an existing reference, creates a note, and opens it.
-- **Turn an inbox into a library.** Drop in a Web Clipper note or a PDF. Clipped notes are enriched and filed; what Web Clipper saved (author, published date, description) fills anything the lookup can't find, which covers sites that turn Stacks away. Looked-up values replace the guesses Web Clipper made from the page, such as its page title; the URL and status are kept. PDFs are checked for a DOI or ISBN in their opening pages, paired with a reference note, and moved into your attachments folder. When a lookup cannot identify a PDF, its document metadata or filename provides a starting point.
+- **Turn an inbox into a library.** Drop in a Web Clipper note, a PDF, an ebook (EPUB, Kobo or Kindle) or a Word or OpenDocument file. Clipped notes are enriched and filed; what Web Clipper saved (author, published date, description) fills anything the lookup can't find, which covers sites that turn Stacks away. Looked-up values replace the guesses Web Clipper made from the page, such as its page title; the URL and status are kept. Files are checked for an ISBN or DOI, in an ebook's own metadata or a PDF's opening pages, paired with a reference note, and moved into your attachments folder. An ebook of a book you already have is attached to it. When a lookup cannot identify a file, its own metadata or filename provides a starting point. See [files and the main file](docs/attachments.md#dropping-files-in-the-inbox).
 - **Clip from the browser.** Obsidian Web Clipper is the main way in; see [capturing with Web Clipper](docs/web-clipper.md) for the properties Stacks reads and a template to import. PubMed records and IDs (`PMID: 12345678`) and COinS on catalog and repository pages are read too.
 - **Keep files in any format.** A reference's PDF, ebook and other files all go in its `attachments`. Its main file is the one in your most preferred format, `pdf, epub` by default, so an ebook library works as well as a PDF one. See [files and the main file](docs/attachments.md).
 - **Find an open-access PDF.** **Find PDF for current reference** checks Unpaywall and the work's landing page, shows which copy and version it found, and attaches it only after you confirm. See [Find PDF](docs/find-pdf.md).
@@ -56,7 +56,7 @@ Zotero has helped researchers collect, organize, and cite their work for years. 
 
 ### From a saved paper to a connected note
 
-1. Run **Stacks: Add reference** and paste a DOI, or drop a PDF into your inbox.
+1. Run **Stacks: Add reference** and paste a DOI, or drop a PDF or ebook into your inbox.
 2. Open the reference note, read the PDF in Obsidian (or on your tablet), and run **Extract annotations** to bring your highlights into the note. Add your own thoughts and links around them.
 3. Browse your library in a Base, follow connections into your projects, and keep building on what you read.
 

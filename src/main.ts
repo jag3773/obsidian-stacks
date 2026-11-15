@@ -21,6 +21,7 @@ import { FileImporter } from "./fileImport";
 import { ImportChoices } from "./importers/plan";
 import { ConflictModal } from "./ui/ConflictModal";
 import { FindPdfModal } from "./ui/FindPdfModal";
+import { inboxFormat } from "./formats";
 import { FullText } from "./fulltext";
 import { asText } from "./text";
 import { Citations } from "./citations";
@@ -265,9 +266,10 @@ export default class LibraryPlugin extends Plugin {
 			this.registerEvent(
 				this.app.vault.on("modify", (f) => {
 					this.onPdfModified(f);
-					// A PDF still being written (left in the inbox as incomplete) is processed once it
-					// settles. Notes aren't: editing a clip that waits in the inbox shouldn't rerun it.
-					if (f instanceof TFile && f.extension === "pdf") this.onInboxChange(f);
+					// A PDF, ebook or document still being written (left in the inbox as incomplete) is
+					// processed once it settles. Notes aren't: editing a clip that waits in the inbox
+					// shouldn't rerun it.
+					if (f instanceof TFile && inboxFormat(f.extension)) this.onInboxChange(f);
 				})
 			);
 			// A pending completion belongs to the path it was scheduled for.
