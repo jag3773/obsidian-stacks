@@ -50,7 +50,8 @@ describe("Check library health", function () {
 		await runCommand("relink-pdfs");
 		const modal = browser.$(".modal-container .modal");
 		await expect(modal.$(".modal-title")).toHaveText("Repair attachment links");
-		await expect(modal.$$(".setting-item-name")).toBeElementsArrayOfSize(2);
+		// One toggle per repair (the button row has none).
+		await expect(modal.$$(".checkbox-container")).toBeElementsArrayOfSize(2);
 		await modal.$("button=Repair").click();
 		await waitForNotice("Stacks: repaired 2 notes.");
 		await browser.waitUntil(async () => (await frontmatter("References/turingComputingMachinery1950.md"))?.pdf === undefined, { timeoutMsg: "pdf property not moved" });
