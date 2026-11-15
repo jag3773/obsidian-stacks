@@ -17,7 +17,7 @@ export const RELEASE_COMMANDS: Record<string, string> = {
 	"check-library-health": "Check library health",
 	"review-duplicates": "Review duplicate references",
 	"batch-edit": "Batch edit references",
-	"create-library-base": "Create library base",
+	"create-library-base": "Create base",
 	"find-pdf": "Find PDF for current reference",
 	"import-bibliography": "Import bibliography file (CSL-JSON, BibTeX, RIS)",
 };

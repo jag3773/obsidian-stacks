@@ -45,7 +45,7 @@ export function registerBatchCommands(plugin: LibraryPlugin, fetcher: Fetcher, s
 			open(scopes, collection);
 		},
 	});
-	plugin.addCommand({ id: "create-library-base", name: "Create library base", callback: () => void createLibraryBase(plugin) });
+	plugin.addCommand({ id: "create-library-base", name: "Create base", callback: () => void createLibraryBase(plugin) });
 
 	// Notes selected in the file explorer, and folders.
 	plugin.registerEvent(

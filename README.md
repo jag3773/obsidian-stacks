@@ -16,7 +16,7 @@ If Obsidian is where you think, it should be enough to manage the sources behind
 
 1. **Install Stacks.** In Obsidian, open **Settings → Community plugins**, choose **Browse**, search for **Stacks**, then install and enable it. (Other options are under [Install](#install).)
 2. **Choose your folders.** Open **Settings → Stacks**. Under **Folders**, set your **References folder** (where reference notes live), **Attachments folder** (where PDFs are filed), and **Inbox folder** (where new clips and PDFs land). The defaults, `References`, `References/attachments` and `Inbox`, work fine if you have no preference.
-3. **Create your library base.** Further down, under **Library base**, press **Create base**. Stacks writes a starter base, `Stacks.base`, with views for each reading status, so you can browse your library right away. (Already have a Base? Pick it in the **Base** field instead.) Bases must be enabled in Obsidian.
+3. **Create your Stacks base.** Further down, under **Stacks base**, press **Create base**. Stacks writes a starter base, `Stacks.base`, with views for each reading status, so you can browse your library right away. (Already have a Base? Pick it in the **Base** field instead.) Bases must be enabled in Obsidian.
 4. **Add your first reference.** Click the **Add reference** icon (the library icon) in the left ribbon, or run **Stacks: Add reference** from the command palette. Paste an ISBN, DOI, arXiv ID, or URL. Stacks looks up the details, creates the note, and opens it.
 5. **Clip from the web.** Install [Obsidian Web Clipper](https://obsidian.md/clipper) in your browser and set it to save into your inbox folder. Anything you clip lands in the inbox, and Stacks picks it up automatically: it fills in the metadata, gives the note a citekey, and files it in your references folder. You can drop PDFs into the inbox too. For a ready-made template, see [capturing with Web Clipper](docs/web-clipper.md).
 
@@ -50,7 +50,7 @@ Zotero has helped researchers collect, organize, and cite their work for years. 
 - **Read on a tablet and bring your highlights home (desktop).** Point Stacks at a folder your reading app syncs. Setting a note to `reading` sends the PDF there; when it comes back changed, Stacks files it, sets the status to `reviewing`, and extracts the annotations. If the PDF also changed in the vault, you choose which copy to keep, and the other is saved beside it.
 - **Keep the library healthy.** **Check library health** writes a report note linking to each problem: missing or duplicate citekeys, broken `pdf` links, PDFs no note links to, broken frontmatter, items stuck in a status, and records missing what their citation needs. Repairs, such as relinking a PDF named after the citekey or merging exact duplicates, are separate commands that show a preview first. See [library health and duplicates](docs/maintenance.md).
 - **Make it fit your vault.** Configure folders, filenames, property mappings, note templates, statuses, and author links. Folder and template settings suggest matching vault paths as you type.
-- **Edit many references at once.** Set a status, add or remove a collection, regenerate citekeys, or complete metadata for a selection, a folder, a collection's members, or the rows of a **Stacks batch** view in a Base, always after a preview. **Create library base** writes views for each reading status, unfiled references and missing PDFs. See [collections, library views and batch edits](docs/batch-and-collections.md).
+- **Edit many references at once.** Set a status, add or remove a collection, regenerate citekeys, or complete metadata for a selection, a folder, a collection's members, or the rows of a **Stacks batch** view in a Base, always after a preview. **Stacks: Create base** writes views for each reading status, unfiled references and missing PDFs. See [collections, library views and batch edits](docs/batch-and-collections.md).
 - **Capture offline, sync anywhere.** A clip saved without a connection waits in the inbox and is retried later; duplicate checks see notes that just arrived through sync, so an item isn't filed twice. See [sync, backups and mobile](docs/sync-and-mobile.md) and [searching your library](docs/searching.md).
 
 ### From a saved paper to a connected note
@@ -90,7 +90,7 @@ Download `main.js`, `manifest.json`, and `styles.css` from the latest [release](
 
 ### Set up your library
 
-Open the Stacks settings and choose your references, attachments, and inbox folders. Under **Library base**, pick an existing `.base` file or press **Create base**.
+Open the Stacks settings and choose your references, attachments, and inbox folders. Under **Stacks base**, pick an existing `.base` file or press **Create base**.
 
 When a Base requires one folder, Stacks can use it as the references folder. Negated or ambiguous folder filters leave the configured destination unchanged. Review the field dropdowns so Stacks uses names such as `author`, `source`, or `Citation Key` the way your vault does. Web Clipper's `published` and `description` are recognized as the publication date and abstract. **Create base** preserves your mappings; **Re-read** refreshes the mapping from a selected Base.
 

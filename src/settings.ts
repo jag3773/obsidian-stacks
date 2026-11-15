@@ -484,7 +484,7 @@ export class LibrarySettingTab extends PluginSettingTab {
 	/** The library base and the field mapping it drives. */
 	private displayBase(containerEl: HTMLElement): void {
 		const s = this.plugin.settings;
-		new Setting(containerEl).setName("Library base").setHeading();
+		new Setting(containerEl).setName("Stacks base").setHeading();
 		const hasBase = !!this.baseFile(s.libraryBase);
 		new Setting(containerEl)
 			.setName("Base")

@@ -2,7 +2,7 @@
 
 Stacks keeps a reference's metadata in flat note properties, so Bases can sort, filter and group on them. This page lists each field, what it holds, and how it becomes a citation record when you export a bibliography.
 
-Every field goes through the property-name mapping in settings (**Library base** and the field dropdowns), so your vault can call `volume` `vol`, or `journal` `publicationTitle`. A field is written only when the source has a value: a book never carries empty `volume` or `issue` keys. Lookups fill empty properties only and never overwrite a value you typed.
+Every field goes through the property-name mapping in settings (**Stacks base** and the field dropdowns), so your vault can call `volume` `vol`, or `journal` `publicationTitle`. A field is written only when the source has a value: a book never carries empty `volume` or `issue` keys. Lookups fill empty properties only and never overwrite a value you typed.
 
 ## Fields
 

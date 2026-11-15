@@ -50,7 +50,7 @@ Stacks is not marked desktop-only. On phones and tablets, everything works excep
 | Add reference, New reference without a lookup, Refresh metadata, Complete current reference | Yes. Lookups use Obsidian's `requestUrl`, which works on mobile |
 | Inbox processing (clips and PDFs), at startup and as files arrive | Yes. PDFs are read with the PDF.js that Obsidian bundles |
 | Extract annotations, extract when a PDF is saved | Yes |
-| Batch edits, Create library base, the Stacks batch view | Yes |
+| Batch edits, Create base, the Stacks batch view | Yes |
 | Bibliography export, Zotero import | Yes |
 | Reading round trip: Send PDF to tablet folder, Check tablet folder, sending on a status change | No. The tablet folder is a path outside the vault. The commands don't appear, and a status change doesn't try to send |
 | Pre-extraction command | No. Running a command needs the desktop app. Extraction runs on the PDF as it is |
