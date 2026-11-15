@@ -4,18 +4,30 @@
 import { browser, expect } from "@wdio/globals";
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, it } from "mocha";
-import { frontmatter, resetLibrary, stubLog, syncWrite, waitForFiles } from "../../helpers/stacks";
+import { files, frontmatter, resetLibrary, stubLog, syncWrite, waitForFiles } from "../../helpers/stacks";
 
 const fixture = (name: string) => new Uint8Array(readFileSync(`test/fixtures/formats/${name}`));
 
-/** Reference notes by title, with their properties, once `count` new ones exist. */
+/**
+ * Reference notes by title, with their properties, once `count` new ones exist and each has
+ * its title and attachments. A note is created before its file is linked, and the metadata
+ * cache can lag the file on a slow runner, so one read right after the files appear isn't enough.
+ */
 async function filedByTitle(before: string[], count: number): Promise<Record<string, Record<string, unknown>>> {
-	const refs = await waitForFiles("References", (p) => p.filter((x) => x.endsWith(".md") && !before.includes(x)).length >= count, "not everything was filed", 30000);
-	const out: Record<string, Record<string, unknown>> = {};
-	for (const path of refs.filter((x) => x.endsWith(".md") && !before.includes(x))) {
-		const fm = (await frontmatter(path)) ?? {};
-		out[String(fm.title)] = { ...fm, path };
-	}
+	let out: Record<string, Record<string, unknown>> = {};
+	await browser.waitUntil(
+		async () => {
+			const refs = (await files("References")).filter((x) => x.endsWith(".md") && !before.includes(x));
+			out = {};
+			for (const path of refs) {
+				const fm = (await frontmatter(path)) ?? {};
+				if (!fm.title || !fm.attachments) return false;
+				out[String(fm.title)] = { ...fm, path };
+			}
+			return Object.keys(out).length >= count;
+		},
+		{ timeout: 30000, interval: 250, timeoutMsg: `not everything was filed: ${JSON.stringify(Object.keys(out))}` }
+	);
 	return out;
 }
 
