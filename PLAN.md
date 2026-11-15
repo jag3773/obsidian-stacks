@@ -87,7 +87,7 @@ All paths are vault-relative unless marked absolute. "Example (ekfocus)" shows t
 | Status after extraction | empty (unchanged) | `processed` | Set after annotations are written, only moving forward in the status list. Off by default so the round trip's `reviewing` step isn't skipped |
 | Annotations heading | `## Annotations` | `## Annotations` | Heading the generated block goes under; the plugin owns only what is between its HTML comment markers |
 | Highlight color map | yellow → quote, red → important, green → tip ("Follow up"), blue → example ("Image"), default → quote, note → note | same colors as the author's Zotero Integration template | Color → callout type, with a label |
-| Pre-extraction command (desktop only) | empty | `python3 resources/scripts/expand_highlights.py {in} {out}` | Optional external step run on returned PDFs and by the extract command, from the vault folder |
+| Pre-extraction command (desktop only) | empty | `~/.cargo/bin/parabloom {in} {out}` | Optional external step run on returned PDFs and by the extract command, from the vault folder. [Parabloom](https://github.com/jag3773/parabloom) expands partial highlights to whole paragraphs |
 | Extract on PDF save | off | on | Re-extract when the PDF in the attachments folder changes (e.g. edited in PDF++) |
 
 ### 4.3 Citations and maintenance (stage 3)

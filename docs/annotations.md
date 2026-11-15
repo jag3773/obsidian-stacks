@@ -69,13 +69,35 @@ Turn on **Extract when a PDF is saved** to re-extract whenever a PDF in the atta
 
 ### Pre-extraction command (desktop)
 
-Some reading apps highlight just the words you dragged over when you meant the whole sentence or paragraph. A **pre-extraction command** runs on the PDF before extraction, so a script can fix that (or run OCR, or anything else that edits the PDF). It runs from the vault folder, with `{in}` and `{out}` replaced by file paths:
+A **pre-extraction command** runs on the PDF before extraction, so another program can change the PDF first: expand highlights, run OCR, or anything else. It runs from the vault folder, with `{in}` and `{out}` replaced by file paths. If the command writes `{out}`, that file replaces the PDF; if it edits `{in}` in place, the edited file is used. If the command fails, the notice shows its output and extraction uses the PDF unchanged. The command runs for **Extract annotations** and for PDFs that come back from the tablet, but not for extract-on-save, so a command that rewrites the file can't start a loop.
 
-```text
-python3 scripts/expand_highlights.py {in} {out}
-```
+#### Expand highlights to whole paragraphs with Parabloom
 
-If the command writes `{out}`, that file replaces the PDF; if it edits `{in}` in place, the edited file is used. If the command fails, the notice shows its output and extraction uses the PDF unchanged. The command runs for **Extract annotations** and for PDFs that come back from the tablet, but not for extract-on-save, so a script that rewrites the file can't start a loop.
+Some reading apps highlight just the words you dragged over when you meant the whole sentence or paragraph. [Parabloom](https://github.com/jag3773/parabloom) fixes that: it expands each partial highlight to cover the paragraph it sits in, keeping the highlight's colour, notes and replies. Stacks then extracts whole paragraphs. It is a separate program from the same author: a single binary with no runtime dependencies, ported from the earlier `expand_highlights.py` Python script with extra safeguards for annotations and file writes.
+
+1. Install it. Download a prebuilt binary for Linux or macOS from the [Parabloom releases](https://github.com/jag3773/parabloom/releases), or build it with Rust:
+
+   ```bash
+   cargo install parabloom --locked
+   ```
+
+2. Find its full path, for example `/usr/local/bin/parabloom` or, after `cargo install`, `~/.cargo/bin/parabloom`:
+
+   ```bash
+   command -v parabloom
+   ```
+
+3. In Stacks' settings, set **Pre-extraction command** to that path followed by `{in} {out}`:
+
+   ```text
+   ~/.cargo/bin/parabloom {in} {out}
+   ```
+
+Use the full path. Obsidian started from the Dock or a desktop launcher doesn't see the `PATH` your terminal uses, so a bare `parabloom` (or `python3`) may not be found, or may be a different copy from the one you installed. Add Parabloom's options before `{in}`; for example, `--indent-x 45` suits small-page ebooks. See its README for the rest.
+
+#### When the command doesn't work
+
+To see what Obsidian runs, temporarily set the command to something that prints and then fails, such as `echo PATH=$PATH; command -v parabloom; exit 1`, and run **Extract annotations**. The notice shows the output. On Linux, the Flatpak and Snap builds of Obsidian run commands inside their sandbox, which can't see programs installed on the system; use the AppImage or .deb build instead.
 
 ### Kindle and other sources
 
