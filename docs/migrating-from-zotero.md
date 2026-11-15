@@ -83,7 +83,7 @@ Pick 30 to 40 notes that cover every combination you care about, not a random sl
 
 Copy them into a separate folder (or a copy of your vault), point the Stacks references folder at it, and run **Stacks: Import from Zotero** on just those notes (step 6 explains the dialog; turn off **Create notes for items without one** so the whole library isn't created there). The import adds properties and leaves bodies, `aliases` and `cssclass` exactly as they were.
 
-Then build a Base (`Library.base`) that shows only converted notes, so the sample is all you see:
+Then build a Base (`Stacks.base`) that shows only converted notes, so the sample is all you see:
 
 ```yaml
 filters:
@@ -94,21 +94,18 @@ filters:
 formulas:
   name: file.asLink(title)
   file_icon: 'if(attachments.isEmpty(), "", list(attachments).filter(value.asFile())[0].asFile().asLink("📄"))'
-  links_in: file.backlinks.length
 properties:
   formula.name:
     displayName: Title
   formula.file_icon:
     displayName: File
-  formula.links_in:
-    displayName: Backlinks
 views:
   - type: table
     name: Library
     groupBy:
       property: status
       direction: ASC
-    order: [formula.name, authors, year, collections, highlights, formula.links_in, formula.file_icon]
+    order: [formula.name, authors, year, collections, highlights, formula.file_icon]
   - type: table
     name: Queue
     filters: 'status == "queued"'
@@ -126,10 +123,11 @@ views:
     order: [formula.name, authors, year, status]
 ```
 
-Two details matter here:
+Three details matter here:
 
 - **Clickable titles.** A plain `title` property isn't a link in a Base. The `name` formula (`file.asLink(title)`) shows the title and opens the note.
-- **Clickable files.** The `file_icon` formula links the first attachment that exists, so it opens from the table. **Create library base** writes a column that picks the file in your most preferred format instead.
+- **Clickable files.** The `file_icon` formula links the first attachment that exists, so it opens from the table. **Stacks: Create base** writes a column that picks the file in your most preferred format instead.
+- **No backlink counts.** Avoid `file.backlinks` in a library view. Obsidian marks it as [performance heavy](https://obsidian.md/help/bases/syntax), and a base that counts backlinks for thousands of references can take a long time to open. Sorting or filtering by it needs the count for every row too. To see what links to one reference, use the backlinks pane on its note.
 
 Live with the sample for a few days. This is where you find out which statuses, collections and views you actually want.
 
@@ -189,7 +187,7 @@ Check afterwards that no links to the removed notes remain.
 
 Once you've worked through the import report, delete it. Then update anything that read the old format:
 
-- **Dataview queries** on inline fields (`Topics::`, `Tags::`) can become embedded Base views, for example `![[Library.base#Queue]]`.
+- **Dataview queries** on inline fields (`Topics::`, `Tags::`) can become embedded Base views, for example `![[Stacks.base#Queue]]`.
 - **Scripts or AI agents** that found new items by modification time can use properties instead. For example: notes where `status` is `processed` and an `ingested` property is empty.
 - **Vault instructions or READMEs** that describe the old Zotero export as read-only should explain the new properties and Base.
 
@@ -197,7 +195,7 @@ Once you've worked through the import report, delete it. Then update anything th
 
 In the Stacks settings:
 
-1. Point the references folder, attachments folder and inbox at your folders. If you made a Base, choose it under **Library base** so Stacks matches its property names.
+1. Point the references folder, attachments folder and inbox at your folders. If you made a Base, choose it under **Base** so Stacks matches its property names.
 2. Use the same citekey formula as Better BibTeX, so new keys match old ones.
 3. Set your statuses, the default status for new items, and the status for web clips. Clips you want processed straight away can use your "processed" status; clips you only want to keep can use your catch-all.
 4. Try it: **Stacks: Add reference** with an ISBN or DOI, and drop a PDF or a Web Clipper note into the inbox.
