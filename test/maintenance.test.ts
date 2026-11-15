@@ -122,6 +122,30 @@ test("linking a note with no attachments to its unlinked file", async () => {
 	assert.deepEqual(fm(app, note).attachments, ["[[smith2020.pdf]]"]);
 });
 
+test("a stale repair doesn't change the note's PDF: one added since the check keeps it, and the repair is skipped", async () => {
+	const { app, maintenance } = setup();
+	const note = app.vault.addFile("References/smith2020.md", md({ citekey: "smith2020" }));
+	app.vault.addFile("References/attachments/smith2020.pdf", new ArrayBuffer(4));
+	app.vault.addFile("References/attachments/scan.pdf", new ArrayBuffer(4));
+	const { repairs } = await maintenance.check();
+	assert.deepEqual(repairs, [{ note: note.path, file: "References/attachments/smith2020.pdf", legacy: undefined }]);
+	// While the preview is open, the note gets a PDF.
+	await app.fileManager.processFrontMatter(note, (fm: Record<string, unknown>) => {
+		fm.attachments = ["[[scan.pdf]]"];
+	});
+	await flush();
+	assert.equal(await maintenance.applyRepair(repairs[0]), false);
+	await flush();
+	assert.deepEqual(fm(app, note).attachments, ["[[scan.pdf]]"]);
+	// A file in another format is still linked: it doesn't change the PDF.
+	app.vault.addFile("References/attachments/smith2020.epub", new ArrayBuffer(4));
+	const ebook = (await maintenance.check()).repairs.find((r) => r.file?.endsWith(".epub"));
+	assert.ok(ebook);
+	assert.equal(await maintenance.applyRepair(ebook), true);
+	await flush();
+	assert.deepEqual(fm(app, note).attachments, ["[[smith2020.epub]]", "[[scan.pdf]]"]);
+});
+
 test("merge: preview counts links, then merge fills, unions, copies prose, repoints links and trashes", async () => {
 	const { app, maintenance } = setup();
 	const keep = app.vault.addFile(

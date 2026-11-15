@@ -195,6 +195,13 @@ export class Maintenance {
 				if (r.legacy !== undefined && legacyNow !== r.legacy) return;
 				let list = listOf(fm[attKey]);
 				const has = (value: string) => list.some((v) => unlink(v) === unlink(value));
+				// A file linked to a note with no file in its format goes first. If the note got one
+				// since the check, linking this one first would change its main file or its PDF.
+				if (file instanceof TFile && r.previous === undefined) {
+					const ext = file.extension.toLowerCase();
+					const now = [...listOf(fm[legacyKey]), ...list].map((v) => this.library.resolveLink(v, note));
+					if (now.some((f) => f && f !== file && f.extension.toLowerCase() === ext)) return;
+				}
 				// The old property's file was the note's PDF: it goes first, so it stays the first PDF.
 				const legacy = r.legacy;
 				if (legacy !== undefined) list = [legacy, ...list.filter((v) => unlink(v) !== unlink(legacy))];

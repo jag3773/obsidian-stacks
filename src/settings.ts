@@ -276,7 +276,7 @@ export class LibrarySettingTab extends PluginSettingTab {
 		const s = this.plugin.settings;
 		let path = "Library.base";
 		for (let i = 1; this.app.vault.getAbstractFileByPath(path); i++) path = `Library ${i}.base`;
-		await this.app.vault.create(path, stringifyYaml(starterBase(s.referencesFolder, s.propertyNames, s.statuses, s.preferredFormats)));
+		await this.app.vault.create(path, stringifyYaml(starterBase(s.referencesFolder, s.propertyNames, s.statuses, s.preferredFormats, s.legacyPdfProperty)));
 		await this.useBase(path, true);
 	}
 
