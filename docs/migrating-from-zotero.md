@@ -94,21 +94,18 @@ filters:
 formulas:
   name: file.asLink(title)
   file_icon: 'if(attachments.isEmpty(), "", list(attachments).filter(value.asFile())[0].asFile().asLink("📄"))'
-  links_in: file.backlinks.length
 properties:
   formula.name:
     displayName: Title
   formula.file_icon:
     displayName: File
-  formula.links_in:
-    displayName: Backlinks
 views:
   - type: table
     name: Library
     groupBy:
       property: status
       direction: ASC
-    order: [formula.name, authors, year, collections, highlights, formula.links_in, formula.file_icon]
+    order: [formula.name, authors, year, collections, highlights, formula.file_icon]
   - type: table
     name: Queue
     filters: 'status == "queued"'
@@ -126,10 +123,11 @@ views:
     order: [formula.name, authors, year, status]
 ```
 
-Two details matter here:
+Three details matter here:
 
 - **Clickable titles.** A plain `title` property isn't a link in a Base. The `name` formula (`file.asLink(title)`) shows the title and opens the note.
 - **Clickable files.** The `file_icon` formula links the first attachment that exists, so it opens from the table. **Stacks: Create base** writes a column that picks the file in your most preferred format instead.
+- **No backlink counts.** Avoid `file.backlinks` in a library view. Obsidian marks it as [performance heavy](https://obsidian.md/help/bases/syntax), and a base that counts backlinks for thousands of references can take a long time to open. Sorting or filtering by it needs the count for every row too. To see what links to one reference, use the backlinks pane on its note.
 
 Live with the sample for a few days. This is where you find out which statuses, collections and views you actually want.
 
