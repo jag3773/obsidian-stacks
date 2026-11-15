@@ -19,7 +19,7 @@ collections:
 
 ## The library base
 
-Run **Stacks: Create library base** (or press **Create base** in the settings). Stacks writes `Library.base` (or `Library 1.base`, `Library 2.base`… if that name is taken; an existing file is never overwritten) using your references folder, your property names and your statuses. It has these views:
+Run **Stacks: Create base** (or press **Create base** in the settings). Stacks writes `Stacks.base` (or `Stacks 1.base`, `Stacks 2.base`… if that name is taken; an existing file is never overwritten) using your references folder, your property names and your statuses. It has these views:
 
 | View | Shows |
 |---|---|

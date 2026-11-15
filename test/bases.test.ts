@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parse, stringify } from "yaml";
-import { baseDisplayNames, baseFolder, basePropertyNames, matchProperties, starterBase, validateBase } from "../src/bases";
+import { DEFAULT_BASE_NAME, baseDisplayNames, baseFolder, basePropertyNames, freeBasePath, matchProperties, starterBase, validateBase } from "../src/bases";
 import { PROPERTY_KEYS } from "../src/properties";
 
 const README_BASE = `
@@ -148,4 +148,13 @@ test("Web Clipper's published and description properties are recognized", () => 
 	assert.equal(m.url, "source");
 	assert.equal(m.added, "created");
 	assert.equal(m.year, "year", "the year isn't taken from a full date property");
+});
+
+test("a new library base is named Stacks.base, or the first free Stacks N.base", () => {
+	assert.equal(DEFAULT_BASE_NAME, "Stacks");
+	assert.equal(freeBasePath(() => false), "Stacks.base");
+	const taken = new Set(["Stacks.base", "Stacks 1.base"]);
+	assert.equal(freeBasePath((p) => taken.has(p)), "Stacks 2.base");
+	// An old Library.base doesn't matter: it is a different name.
+	assert.equal(freeBasePath((p) => p === "Library.base"), "Stacks.base");
 });

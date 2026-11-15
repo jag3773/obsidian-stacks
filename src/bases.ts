@@ -291,6 +291,19 @@ export function matchProperties(available: string[], displayNames: Record<string
 /** A Bases expression string literal. */
 const lit = (s: string) => JSON.stringify(s);
 
+/** The name Stacks gives a library base it creates: Stacks.base. */
+export const DEFAULT_BASE_NAME = "Stacks";
+
+/**
+ * Where a new library base goes: `Stacks.base` in the vault root, or `Stacks 1.base`,
+ * `Stacks 2.base`… when that name is taken, so an existing file is never overwritten.
+ */
+export function freeBasePath(exists: (path: string) => boolean, name = DEFAULT_BASE_NAME): string {
+	let path = `${name}.base`;
+	for (let i = 1; exists(path); i++) path = `${name} ${i}.base`;
+	return path;
+}
+
 /**
  * A starter library base over `folder`, as an object for a YAML serializer (so every
  * expression and property id is quoted correctly at the YAML layer). Every field is listed
