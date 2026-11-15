@@ -15,7 +15,7 @@ The handoff is simple: Web Clipper saves a note into your **inbox folder** (Sett
 | `description` | Recommended | Used as the abstract when the lookup finds none, or when the lookup's abstract was cut short ("…") and the description is longer. |
 | `doi` | Optional | A DOI read from the page. When the page's own lookup finds no DOI (for example because the site blocked it), Stacks looks the DOI up in Crossref instead. |
 
-Stacks also accepts these values under your own mapped property names (Settings → Stacks base → Fields), and `date`, `authors`, `creator`, `abstract` and `summary` as alternatives.
+Stacks also accepts these values under your own mapped property names (Settings → Stacks → Base → Fields), and `date`, `authors`, `creator`, `abstract` and `summary` as alternatives.
 
 The clip's body is never changed. Stacks writes properties only, then renames the note and moves it into your references folder.
 
@@ -58,7 +58,7 @@ Import this in Web Clipper (Settings → Templates → Import), then change `pat
 Notes on the template:
 
 - It matches Web Clipper's default template, plus a `doi` property read from the page's `citation_doi` tag (most journal sites have one). An empty `doi` is ignored.
-- Stacks writes its own `authors` and `abstract` properties beside the clipper's `author` and `description`. To keep a single property, map **Authors** to `author` and **Abstract** to `description` in Settings → Stacks base → Fields, or rename the properties in the template.
+- Stacks writes its own `authors` and `abstract` properties beside the clipper's `author` and `description`. To keep a single property, map **Authors** to `author` and **Abstract** to `description` in Settings → Stacks → Base → Fields, or rename the properties in the template.
 - `created` and `tags` are not used by Stacks and are kept as they are.
 - Variable and filter names follow Web Clipper's documentation at the time of writing. If an import fails in your Web Clipper version, create the template by hand with the same property names.
 

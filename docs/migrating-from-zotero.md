@@ -197,7 +197,7 @@ Once you've worked through the import report, delete it. Then update anything th
 
 In the Stacks settings:
 
-1. Point the references folder, attachments folder and inbox at your folders. If you made a Base, choose it under **Stacks base** so Stacks matches its property names.
+1. Point the references folder, attachments folder and inbox at your folders. If you made a Base, choose it under **Base** so Stacks matches its property names.
 2. Use the same citekey formula as Better BibTeX, so new keys match old ones.
 3. Set your statuses, the default status for new items, and the status for web clips. Clips you want processed straight away can use your "processed" status; clips you only want to keep can use your catch-all.
 4. Try it: **Stacks: Add reference** with an ISBN or DOI, and drop a PDF or a Web Clipper note into the inbox.

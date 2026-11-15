@@ -73,7 +73,7 @@ All paths are vault-relative unless marked absolute. "Example (ekfocus)" shows t
 | Complete notes on property edit | on | on | A note in the references folder with an ISBN, DOI or URL and no citekey gets filled in and renamed |
 | URL properties in clipped notes | `url, source` | `url, source` | Where to look for the URL in Web Clipper output |
 | Contact email | empty | user's choice | Sent as `mailto` for Crossref's polite pool, and to Unpaywall (which requires it) when Find PDF runs; never filled by default |
-| Stacks base | empty | `Library.base` | The base that shows the library. Its `file.inFolder()` sets the references folder; its properties (and those on notes in that folder) are matched to the fields below |
+| Base | empty | `Library.base` | The base that shows the library. Its `file.inFolder()` sets the references folder; its properties (and those on notes in that folder) are matched to the fields below |
 | Fields | logical names | matched from the base | Map of logical → real property names (section 3), chosen from the base's properties in dropdowns |
 
 ### 4.2 Reading round trip (stage 2)

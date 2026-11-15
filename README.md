@@ -16,7 +16,7 @@ If Obsidian is where you think, it should be enough to manage the sources behind
 
 1. **Install Stacks.** In Obsidian, open **Settings → Community plugins**, choose **Browse**, search for **Stacks**, then install and enable it. (Other options are under [Install](#install).)
 2. **Choose your folders.** Open **Settings → Stacks**. Under **Folders**, set your **References folder** (where reference notes live), **Attachments folder** (where PDFs are filed), and **Inbox folder** (where new clips and PDFs land). The defaults, `References`, `References/attachments` and `Inbox`, work fine if you have no preference.
-3. **Create your Stacks base.** Further down, under **Stacks base**, press **Create base**. Stacks writes a starter base, `Stacks.base`, with views for each reading status, so you can browse your library right away. (Already have a Base? Pick it in the **Base** field instead.) Bases must be enabled in Obsidian.
+3. **Create your Stacks base.** Further down, under **Base**, press **Create base**. Stacks writes a starter base, `Stacks.base`, with views for each reading status, so you can browse your library right away. (Already have a Base? Pick it in the **Base** field instead.) Bases must be enabled in Obsidian.
 4. **Add your first reference.** Click the **Add reference** icon (the library icon) in the left ribbon, or run **Stacks: Add reference** from the command palette. Paste an ISBN, DOI, arXiv ID, or URL. Stacks looks up the details, creates the note, and opens it.
 5. **Clip from the web.** Install [Obsidian Web Clipper](https://obsidian.md/clipper) in your browser and set it to save into your inbox folder. Anything you clip lands in the inbox, and Stacks picks it up automatically: it fills in the metadata, gives the note a citekey, and files it in your references folder. You can drop PDFs into the inbox too. For a ready-made template, see [capturing with Web Clipper](docs/web-clipper.md).
 
@@ -90,7 +90,7 @@ Download `main.js`, `manifest.json`, and `styles.css` from the latest [release](
 
 ### Set up your library
 
-Open the Stacks settings and choose your references, attachments, and inbox folders. Under **Stacks base**, pick an existing `.base` file or press **Create base**.
+Open the Stacks settings and choose your references, attachments, and inbox folders. Under **Base**, pick an existing `.base` file or press **Create base**.
 
 When a Base requires one folder, Stacks can use it as the references folder. Negated or ambiguous folder filters leave the configured destination unchanged. Review the field dropdowns so Stacks uses names such as `author`, `source`, or `Citation Key` the way your vault does. Web Clipper's `published` and `description` are recognized as the publication date and abstract. **Create base** preserves your mappings; **Re-read** refreshes the mapping from a selected Base.
 
