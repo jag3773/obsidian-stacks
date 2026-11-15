@@ -47,9 +47,17 @@ async function openView(file: string, viewName: string): Promise<ViewResult> {
 }
 
 const EDGE_CASES = {
-	// An empty collections list and an empty pdf string count as empty too.
+	// An empty collections list and an empty attachments string count as empty too.
 	"References/dijkstraGoToStatement1968.md":
-		'---\ncitekey: dijkstraGoToStatement1968\ntype: article\ntitle: Go To Statement Considered Harmful\nauthors:\n  - "[[Edsger W. Dijkstra]]"\nyear: 1968\njournal: Communications of the ACM\ncollections: []\npdf: ""\nstatus: queued\n---\n',
+		'---\ncitekey: dijkstraGoToStatement1968\ntype: article\ntitle: Go To Statement Considered Harmful\nauthors:\n  - "[[Edsger W. Dijkstra]]"\nyear: 1968\njournal: Communications of the ACM\ncollections: []\nattachments: ""\nstatus: queued\n---\n',
+	// An ebook (a preferred format) after a broken link: not missing a file; the ebook is the main file.
+	"References/knuthArtComputerProgramming1968.md":
+		'---\ncitekey: knuthArtComputerProgramming1968\ntype: book\ntitle: The Art of Computer Programming\nauthors:\n  - "[[Donald Knuth]]"\nyear: 1968\npublisher: Addison-Wesley\ncollections: ["[[Strategy]]"]\nattachments:\n  - "[[gone.pdf]]"\n  - "[[knuthArtComputerProgramming1968.EPUB]]"\nstatus: shelved\n---\n',
+	"References/attachments/knuthArtComputerProgramming1968.EPUB": "not really an ebook",
+	// Only a download in no preferred format: missing a file, though the column still links it.
+	"References/shannonMathematicalTheory1948.md":
+		'---\ncitekey: shannonMathematicalTheory1948\ntype: article\ntitle: A Mathematical Theory of Communication\nauthors:\n  - "[[Claude Shannon]]"\nyear: 1948\njournal: Bell System Technical Journal\ncollections: ["[[Strategy]]"]\nattachments:\n  - "[[shannon-figures.zip]]"\nstatus: shelved\n---\n',
+	"References/attachments/shannon-figures.zip": "zip",
 	// Not a reference (no citekey): never in the library base.
 	"References/Reading notes.md": "---\ntitle: Notes about my reading\n---\nJust notes.\n",
 };
@@ -73,22 +81,35 @@ describe("Library base in Bases", function () {
 		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Library.base");
 	});
 
-	it("evaluates every view, including Unfiled and Missing PDF, without errors", async function () {
+	it("evaluates every view, including Unfiled and Missing file, without errors", async function () {
 		await runCommand("create-library-base");
 		await waitForFiles("", (p) => p.includes("Library.base"), "no Library.base");
 
-		const all = ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md", "References/liskovProgrammingAbstractData1974.md", "References/porterCreatingSharedValue2011.md"];
+		const all = [
+			"References/dijkstraGoToStatement1968.md",
+			"References/hookerLaws1989.md",
+			"References/knuthArtComputerProgramming1968.md",
+			"References/liskovProgrammingAbstractData1974.md",
+			"References/porterCreatingSharedValue2011.md",
+			"References/shannonMathematicalTheory1948.md",
+		];
 		const expected: Record<string, string[]> = {
 			Library: all,
 			Queued: ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md"],
 			Reading: ["References/porterCreatingSharedValue2011.md"],
 			Reviewing: [],
 			Processed: ["References/liskovProgrammingAbstractData1974.md"],
-			Shelved: [],
+			Shelved: ["References/knuthArtComputerProgramming1968.md", "References/shannonMathematicalTheory1948.md"],
 			// No collections property (Hooker), or an empty list (Dijkstra).
 			Unfiled: ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md"],
-			// No pdf property (Hooker, Liskov), or an empty string (Dijkstra). Porter has one.
-			"Missing PDF": ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md", "References/liskovProgrammingAbstractData1974.md"],
+			// No attachments (Hooker, Liskov), an empty string (Dijkstra), or only a file in no
+			// preferred format (Shannon). Porter has a PDF, Knuth an ebook.
+			"Missing file": [
+				"References/dijkstraGoToStatement1968.md",
+				"References/hookerLaws1989.md",
+				"References/liskovProgrammingAbstractData1974.md",
+				"References/shannonMathematicalTheory1948.md",
+			],
 		};
 		const names = await browser.executeObsidian(({ app }) => {
 			const view = app.workspace.getMostRecentLeaf()!.view as any;
@@ -108,6 +129,30 @@ describe("Library base in Bases", function () {
 			expect({ view, rows: r.rendered.length }).toEqual({ view, rows: files.length });
 			for (const f of files) expect({ view, title: titles[f], shown: r.rendered.some((row) => row.includes(titles[f])) }).toEqual({ view, title: titles[f], shown: true });
 		}
+	});
+
+	it("links each reference's main file in the File column", async function () {
+		await runCommand("create-library-base");
+		await waitForFiles("", (p) => p.includes("Library.base"), "no Library.base");
+		await openView("Library.base", "Library");
+		const links = await browser.executeObsidian(({ app }) => {
+			const el = (app.workspace.getMostRecentLeaf()!.view as any).containerEl as HTMLElement;
+			const out: Record<string, string> = {};
+			for (const row of Array.from(el.querySelectorAll(".bases-tbody .bases-tr"))) {
+				const cells = Array.from(row.querySelectorAll(".bases-td"));
+				const title = cells[0]?.textContent?.trim() ?? "";
+				out[title] = cells[1]?.querySelector("a.internal-link")?.getAttribute("href") ?? "";
+			}
+			return out;
+		});
+		expect(links).toEqual({
+			"Creating Shared Value": "References/attachments/porterCreatingSharedValue2011.pdf",
+			"The Art of Computer Programming": "References/attachments/knuthArtComputerProgramming1968.EPUB",
+			"A Mathematical Theory of Communication": "References/attachments/shannon-figures.zip",
+			"Go To Statement Considered Harmful": "",
+			"Of the Laws of Ecclesiastical Polity": "",
+			"Programming with Abstract Data Types": "",
+		});
 	});
 
 	it("lists a Stacks batch view's rows and opens the batch preview for exactly those", async function () {

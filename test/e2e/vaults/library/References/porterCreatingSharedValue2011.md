@@ -14,7 +14,6 @@ doi: 10.1234/e2e.porter
 collections:
   - "[[Strategy]]"
 status: reading
-pdf: "[[porterCreatingSharedValue2011.pdf]]"
 attachments:
   - "[[porterCreatingSharedValue2011.pdf]]"
 added: 2025-01-10

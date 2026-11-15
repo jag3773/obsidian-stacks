@@ -22,13 +22,13 @@ Install both from Community plugins and follow their own setup instructions; the
 
 ## From a PDF hit back to its reference
 
-Stacks files each PDF in the attachments folder and links it from its reference note's `pdf` property (and `attachments` list). That link works in both directions:
+Stacks files each PDF in the attachments folder and links it from its reference note's `attachments` list. That link works in both directions:
 
 1. Open the PDF from the search result.
-2. Open the **Backlinks** pane (or the PDF's **Linked mentions**). The reference note is listed there, because its `pdf` property links to this file.
+2. Open the **Backlinks** pane (or the PDF's **Linked mentions**). The reference note is listed there, because its `attachments` link to this file.
 3. Open the reference note for the metadata, the citekey, your extracted highlights and your notes.
 
-The attachment filename is the citekey by default (the **Attachment filename format** setting), so a PDF hit often tells you which reference it is before you open anything. Core search can also find the note from the PDF's name: search `[pdf:smith2020]`.
+The attachment filename is the citekey by default (the **Attachment filename format** setting), so a PDF hit often tells you which reference it is before you open anything. Core search can also find the note from the PDF's name: search `[attachments:smith2020]`.
 
 ## Scanned PDFs
 

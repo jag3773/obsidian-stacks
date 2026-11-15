@@ -1,6 +1,6 @@
 import { App, TFile } from "obsidian";
 import { applyAnnotationBlock, currentAnnotationBlock, headingLevel, parseColorMap, renderAnnotations } from "./annotations";
-import { Cancelled, Library, unlink } from "./library";
+import { Cancelled, Library } from "./library";
 import { readAnnotations } from "./pdf";
 import { LibrarySettings } from "./settings";
 import { asText, localDate } from "./text";
@@ -29,29 +29,15 @@ export class Extractor {
 		if (!this.active()) throw new Cancelled();
 	}
 
-	/** Link-ish property values on a note, as a list. */
-	private links(note: TFile, key: "pdf" | "attachments"): string[] {
-		const v = this.library.frontmatter(note)[this.library.prop(key)];
-		return (Array.isArray(v) ? v : v ? [v] : []).map(unlink).filter(Boolean);
-	}
-
-	private resolve(linkpath: string, note: TFile): TFile | null {
-		// A pdf property may hold a link with a subpath ("file.pdf#page=3").
-		return this.app.metadataCache.getFirstLinkpathDest(linkpath.split("#")[0], note.path);
-	}
-
-	/** The note's PDF: its pdf property, else the first PDF among its attachments. */
+	/** The note's PDF: the first PDF among its attachments. */
 	pdfFor(note: TFile): TFile | null {
-		for (const l of [...this.links(note, "pdf"), ...this.links(note, "attachments")]) {
-			const f = this.resolve(l, note);
-			if (f && f.extension === "pdf") return f;
-		}
-		return null;
+		return this.library.pdfOf(note);
 	}
 
-	/** Reference notes whose pdf (or attachments) link to this PDF. */
+	/** Reference notes whose attachments link to this PDF, those with it as their PDF first. */
 	notesFor(pdf: TFile): TFile[] {
-		return this.library.referenceFiles().filter((n) => this.pdfFor(n) === pdf || this.links(n, "attachments").some((l) => this.resolve(l, n) === pdf));
+		const notes = this.library.referenceFiles().filter((n) => this.library.attachmentFiles(n).includes(pdf));
+		return [...notes.filter((n) => this.pdfFor(n) === pdf), ...notes.filter((n) => this.pdfFor(n) !== pdf)];
 	}
 
 	/**
@@ -63,7 +49,7 @@ export class Extractor {
 	async extract(note: TFile, bytes?: ArrayBuffer): Promise<ExtractSummary> {
 		const s = this.settings();
 		const pdf = this.pdfFor(note);
-		if (!pdf) throw new Error(`${note.basename} has no PDF linked in its ${this.library.prop("pdf")} property.`);
+		if (!pdf) throw new Error(`${note.basename} has no PDF in its ${this.library.prop("attachments")} property.`);
 		const data = bytes ?? (await this.app.vault.readBinary(pdf));
 		const result = await readAnnotations(data, pdf.name);
 		const block = renderAnnotations(result.annotations, {

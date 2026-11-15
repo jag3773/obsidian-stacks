@@ -1,6 +1,7 @@
 import { App, Notice, TFile } from "obsidian";
 import { normalizeDoi } from "./identifiers";
-import { Library } from "./library";
+import { extensionOf } from "./attachments";
+import { Library, unlink } from "./library";
 import { PdfCandidate, PdfSearch, describeCandidate, downloadPdf, findPdfCandidates } from "./metadata/fulltext";
 import { Fetcher } from "./metadata/http";
 import { LibrarySettings } from "./settings";
@@ -22,9 +23,9 @@ export class FullText {
 		private choose: ChooseCandidate
 	) {}
 
-	/** The note's pdf link, if it has one. */
+	/** The note's first PDF attachment as written (found or not), if it has one. */
 	private existingPdf(note: TFile): string {
-		return asText(this.library.frontmatter(note)[this.library.prop("pdf")]).trim();
+		return this.library.attachmentValues(note).find((v) => this.library.resolveLink(v, note)?.extension.toLowerCase() === "pdf" || extensionOf(unlink(v)) === "pdf") ?? "";
 	}
 
 	/** The DOI (normalized) and URL the search is made with. */
@@ -40,7 +41,7 @@ export class FullText {
 	async find(note: TFile): Promise<TFile | null> {
 		const existing = this.existingPdf(note);
 		if (existing) {
-			new Notice(`Stacks: ${note.basename} already has a PDF (${existing}). Remove its ${this.library.prop("pdf")} property first to look for another.`);
+			new Notice(`Stacks: ${note.basename} already has a PDF (${existing}). Remove it from ${this.library.prop("attachments")} first to look for another.`);
 			return null;
 		}
 		const { doi, url } = this.identity(note);

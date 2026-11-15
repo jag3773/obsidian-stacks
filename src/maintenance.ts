@@ -9,14 +9,17 @@ import {
 	mergeFrontmatter,
 	splitNote,
 } from "./duplicates";
-import { HealthNote, HealthReport, PdfRepair, ReportContext, checkHealth, healthReportMarkdown } from "./health";
-import { Library, unlink } from "./library";
+import { AttachmentRepair, HealthNote, HealthReport, ReportContext, checkHealth, healthReportMarkdown } from "./health";
+import { Library, listOf, unlink } from "./library";
 import { FoundLink, findLinks, rewriteLinks } from "./links";
 import { LibrarySettings } from "./settings";
 import { safeFilename } from "./template";
 import { asText, localDate } from "./text";
 
 type Frontmatter = Record<string, unknown>;
+
+/** Vault files that are never a reference's attachment: notes, canvases and bases. */
+const NOT_ATTACHMENTS = new Set(["md", "canvas", "base"]);
 
 /** The health report note's name; it sits beside the references folder. */
 export const REPORT_NAME = "Stacks health check";
@@ -41,10 +44,8 @@ export interface MergeResult {
 	filesChanged: number;
 }
 
-const listOf = (v: unknown): unknown[] => (Array.isArray(v) ? v : v === undefined || v === null || v === "" ? [] : [v]);
-
 /**
- * The health check, PDF relinking and duplicate merging, against the vault. Checking only
+ * The health check, attachment repairs and duplicate merging, against the vault. Checking only
  * reads; each repair is a separate call made after the person has seen a preview.
  */
 export class Maintenance {
@@ -56,12 +57,6 @@ export class Maintenance {
 		private library: Library,
 		private settings: () => LibrarySettings
 	) {}
-
-	/** Resolve a link-ish property value or link path from a note; null if it doesn't resolve. */
-	private resolve(value: string, from: TFile): TFile | null {
-		const linkpath = unlink(value).split("#")[0].trim();
-		return linkpath ? this.app.metadataCache.getFirstLinkpathDest(linkpath, from.path) : null;
-	}
 
 	/** Whether a link found in `source`'s text goes to `target`. */
 	private pointsTo(link: FoundLink, source: TFile, target: TFile): boolean {
@@ -109,34 +104,34 @@ export class Maintenance {
 				const dest = l.target ? this.app.metadataCache.getFirstLinkpathDest(l.target, file.path) : null;
 				if (dest) linked.add(dest.path);
 			}
-			const note: HealthNote = { path: file.path, basename: file.basename, frontmatter, parseError: error, pdfNames: [], linked: [], modified: file.stat?.mtime ?? 0 };
+			const note: HealthNote = { path: file.path, basename: file.basename, frontmatter, parseError: error, attachments: [], attachmentNames: [], linked: [], modified: file.stat?.mtime ?? 0 };
 			if (frontmatter) {
 				readable.push(file);
 				// Bare paths in properties count as links too.
-				for (const key of ["pdf", "attachments"] as const)
-					for (const v of listOf(frontmatter[lib.prop(key)])) {
-						const dest = this.resolve(asText(v), file);
-						if (dest) linked.add(dest.path);
-					}
-				const pdfValue = listOf(frontmatter[lib.prop("pdf")]).map(asText).find((v) => v.trim());
-				if (pdfValue) note.pdf = { value: pdfValue, resolves: !!this.resolve(pdfValue, file) };
+				for (const value of lib.attachmentValues(file, frontmatter)) {
+					const dest = lib.resolveLink(value, file);
+					if (dest) linked.add(dest.path);
+					note.attachments.push({ value, resolvesTo: dest?.path });
+				}
+				const legacy = listOf(frontmatter[s.legacyPdfProperty]).map(asText).find((v) => v.trim());
+				if (legacy) note.legacyPdf = legacy;
 				const citekey = asText(frontmatter[lib.prop("citekey")]).trim();
 				if (citekey) {
 					const inputs = lib.keyInputsFromNote(file);
 					note.expectedBasename = lib.formatName(s.filenameFormat, citekey, inputs);
-					note.pdfNames = [...new Set([`${safeFilename(citekey)}.pdf`, `${lib.formatName(s.attachmentFilenameFormat, citekey, inputs)}.pdf`])];
+					note.attachmentNames = [...new Set([safeFilename(citekey), lib.formatName(s.attachmentFilenameFormat, citekey, inputs)])];
 				}
 			}
 			note.linked = [...linked];
 			notes.push(note);
 		}
-		const pdfs = this.app.vault
+		const files = this.app.vault
 			.getFiles()
-			.filter((f) => f.extension.toLowerCase() === "pdf")
+			.filter((f) => !NOT_ATTACHMENTS.has(f.extension.toLowerCase()))
 			.map((f) => ({ path: f.path, inAttachments: lib.inFolder(f, s.attachmentsFolder) }));
 		const duplicates = findDuplicates(this.dupNotes(readable), { properties: s.propertyNames, urlProperties: s.urlProperties });
 		return checkHealth(
-			{ notes, pdfs, duplicates },
+			{ notes, files, duplicates },
 			{ properties: s.propertyNames, staleDays: s.healthStaleDays, staleStatuses: s.healthStaleStatuses, now }
 		);
 	}
@@ -168,7 +163,7 @@ export class Maintenance {
 		const s = this.settings();
 		const md =
 			`---\n${REPORT_MARKER.key}: ${REPORT_MARKER.value}\n---\n` +
-			healthReportMarkdown(report, { date: localDate(new Date(), true), staleDays: s.healthStaleDays, commands, properties: s.propertyNames });
+			healthReportMarkdown(report, { date: localDate(new Date(), true), staleDays: s.healthStaleDays, commands, properties: s.propertyNames, legacyPdfProperty: s.legacyPdfProperty });
 		for (let n = 0; ; n++) {
 			const path = this.reportPath(n);
 			const existing = this.app.vault.getAbstractFileByPath(path);
@@ -181,28 +176,34 @@ export class Maintenance {
 	}
 
 	/**
-	 * Point a note's pdf at the repair's PDF and list it in its attachments, replacing the
-	 * broken link there too. Skipped (false) when the note or PDF is gone or the note's pdf
-	 * changed since the check.
+	 * Apply one attachment repair: move the earlier PDF property's value to the front of the
+	 * attachments list and remove the property, then link the repair's file in place of the broken
+	 * value, or first in the list when it replaces nothing. Skipped (false) when the note or
+	 * file is gone, or the note changed since the check so the repair no longer fits.
 	 */
-	async applyRepair(r: PdfRepair): Promise<boolean> {
+	async applyRepair(r: AttachmentRepair): Promise<boolean> {
 		return this.library.exclusive(async () => {
 			const note = this.app.vault.getAbstractFileByPath(r.note);
-			const pdf = this.app.vault.getAbstractFileByPath(r.pdf);
-			if (!(note instanceof TFile) || !(pdf instanceof TFile)) return false;
-			const pdfKey = this.library.prop("pdf");
+			const file = r.file === undefined ? null : this.app.vault.getAbstractFileByPath(r.file);
+			if (!(note instanceof TFile) || (r.file !== undefined && !(file instanceof TFile))) return false;
+			const legacyKey = this.settings().legacyPdfProperty;
 			const attKey = this.library.prop("attachments");
-			const link = this.library.linkTo(pdf, note);
+			const link = file instanceof TFile ? this.library.linkTo(file, note) : undefined;
 			let applied = false;
 			await this.app.fileManager.processFrontMatter(note, (fm: Frontmatter) => {
-				const current = listOf(fm[pdfKey]).map(asText).find((v) => v.trim());
-				if ((current ?? undefined) !== r.previous) return;
-				fm[pdfKey] = link;
-				const old = r.previous === undefined ? undefined : unlink(r.previous);
-				const list = listOf(fm[attKey]).map((v) => (old !== undefined && unlink(v) === old ? link : v));
-				const unique = list.filter((v, i) => list.findIndex((x) => unlink(x) === unlink(v)) === i);
-				if (!unique.some((v) => unlink(v) === unlink(link))) unique.push(link);
-				fm[attKey] = unique;
+				const legacyNow = listOf(fm[legacyKey]).map(asText).find((v) => v.trim());
+				if (r.legacy !== undefined && legacyNow !== r.legacy) return;
+				let list = listOf(fm[attKey]);
+				const has = (value: string) => list.some((v) => unlink(v) === unlink(value));
+				// The old property's file was the note's PDF: it goes first, so it stays the first PDF.
+				const legacy = r.legacy;
+				if (legacy !== undefined) list = [legacy, ...list.filter((v) => unlink(v) !== unlink(legacy))];
+				if (r.previous !== undefined) {
+					if (!has(r.previous)) return;
+					list = list.map((v) => (unlink(v) === unlink(r.previous) ? link ?? v : v));
+				} else if (link && !list.some((v) => this.library.resolveLink(v, note) === file)) list.unshift(link);
+				fm[attKey] = list.filter((v, i) => list.findIndex((x) => unlink(x) === unlink(v)) === i);
+				if (r.legacy !== undefined) delete fm[legacyKey];
 				applied = true;
 			});
 			return applied;

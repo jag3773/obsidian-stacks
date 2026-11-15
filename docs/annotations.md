@@ -6,7 +6,7 @@ Stacks turns the highlights and comments in a reference's PDF into Markdown in t
 
 Open a reference note (or its PDF) and run **Stacks: Extract annotations for current note**.
 
-Stacks reads the PDF linked in the note's `pdf` property (or the first PDF in `attachments`) and writes the annotations under the **Annotations heading** (default `## Annotations`). If the note has no such heading, Stacks adds one at the end of the note.
+Stacks reads the note's PDF, the first PDF in its `attachments` (see [files and the main file](attachments.md)), and writes the annotations under the **Annotations heading** (default `## Annotations`). If the note has no such heading, Stacks adds one at the end of the note.
 
 ```markdown
 ## Annotations
@@ -123,7 +123,7 @@ Set up under **Settings → Reading round trip**:
 3. **Return.** While Obsidian runs, Stacks watches the folder, and it checks the whole folder each time Obsidian starts. **Stacks: Check tablet folder for returned PDFs** checks on demand. When a PDF's fingerprint differs from what was sent, Stacks waits until the sync client has finished writing it (a file that keeps changing is left for the next check), checks that it opens as a PDF, runs the pre-extraction command if you set one, copies it over the attachment in the vault, sets the status to `reviewing`, and extracts the annotations into the note.
 4. **Review** in Obsidian's viewer or PDF++. With **Extract when a PDF is saved** on, changes you make there update the note too.
 
-Returned PDFs are matched by file name, and the fingerprint tells a real change from a re-sync of the same file. Stacks also follows the attachment when you rename it in Obsidian. If it was renamed while Obsidian was closed, Stacks finds it through the note's `pdf` link or by its content.
+Returned PDFs are matched by file name, and the fingerprint tells a real change from a re-sync of the same file. Stacks also follows the attachment when you rename it in Obsidian. If it was renamed while Obsidian was closed, Stacks finds it through the note's `attachments` or by its content.
 
 ### When both copies changed
 

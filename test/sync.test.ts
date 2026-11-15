@@ -406,7 +406,7 @@ test("#27 Create library base writes a new file and never overwrites one", async
 	const config = parseYaml(await app.vault.read(created));
 	assert.deepEqual(
 		config.views.map((v: any) => v.name),
-		["Library", "Queued", "Reading", "Reviewing", "Processed", "Shelved", "Unfiled", "Missing PDF"]
+		["Library", "Queued", "Reading", "Reviewing", "Processed", "Shelved", "Unfiled", "Missing file"]
 	);
 	assert.equal(plugin.settings.libraryBase, "Library 1.base", "adopted when none was set");
 	cmd.callback();

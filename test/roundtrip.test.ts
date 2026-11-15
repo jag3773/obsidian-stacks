@@ -164,7 +164,7 @@ test("a PDF with no annotations leaves a note without a block untouched", async 
 test("a note without a PDF gets a clear error", async () => {
 	const { app, extractor } = setup();
 	const bare = app.vault.addFile("References/bare.md", `---\n{"citekey":"bare"}\n---\n`);
-	await assert.rejects(extractor.extract(bare), /has no PDF linked/);
+	await assert.rejects(extractor.extract(bare), /has no PDF in its attachments property/);
 });
 
 // ---------------------------------------------------------------- round trip

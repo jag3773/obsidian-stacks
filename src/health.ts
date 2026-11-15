@@ -1,9 +1,10 @@
 /**
  * Pure module: the library health check. Takes what the vault layer read (notes, their
- * frontmatter or parse error, which links resolve, the PDFs) and returns the problems, plus
+ * frontmatter or parse error, which links resolve, the files) and returns the problems, plus
  * the repairs that can be offered. Writes nothing. docs/maintenance.md is the user-facing
  * version.
  */
+import { extensionOf } from "./attachments";
 import { CSL_TYPES, missingFields, noteToCsl } from "./citation";
 import { DuplicateGroup, describeReason } from "./duplicates";
 import { PropertyKey } from "./properties";
@@ -21,10 +22,15 @@ export interface HealthNote {
 	parseError?: string;
 	/** The filename (without extension) the note's citekey gives under the filename format. */
 	expectedBasename?: string;
-	/** The note's `pdf` property as written, when it has one, and whether it resolves. */
-	pdf?: { value: string; resolves: boolean };
-	/** File names a PDF named after this note's citekey would have ("key.pdf"). */
-	pdfNames: string[];
+	/**
+	 * The note's attachments as written, and the file each resolves to (undefined when it
+	 * doesn't). The property earlier versions kept the PDF in comes first when set.
+	 */
+	attachments: { value: string; resolvesTo?: string }[];
+	/** The value of that earlier PDF property, when the note still has it. */
+	legacyPdf?: string;
+	/** File names, without extension, a file named after this note's citekey would have ("key"). */
+	attachmentNames: string[];
 	/** Paths of files the note links to (properties and body). */
 	linked: string[];
 	/** Last modification time, ms. */
@@ -42,16 +48,21 @@ export interface HealthOptions {
 
 export interface HealthInput {
 	notes: HealthNote[];
-	/** Every PDF in the vault, and whether it is in the attachments folder. */
-	pdfs: { path: string; inAttachments: boolean }[];
+	/** Every file in the vault that isn't a note, and whether it is in the attachments folder. */
+	files: { path: string; inAttachments: boolean }[];
 	duplicates: DuplicateGroup[];
 }
 
-/** Point a note's `pdf` at a file. `previous` is the value it replaces, if any. */
-export interface PdfRepair {
+/**
+ * A change to one note's attachments: link `file`, in place of the broken value `previous`
+ * when given; and when `legacy` is given, move that value of the earlier PDF property into
+ * the attachments list and remove the property.
+ */
+export interface AttachmentRepair {
 	note: string;
-	pdf: string;
+	file?: string;
 	previous?: string;
+	legacy?: string;
 }
 
 export interface HealthReport {
@@ -60,14 +71,15 @@ export interface HealthReport {
 	missingCitekey: string[];
 	duplicateCitekeys: { citekey: string; paths: string[] }[];
 	filenameMismatch: { path: string; citekey: string; expected: string }[];
-	unresolvedPdf: { path: string; value: string; candidate?: string }[];
-	orphanPdfs: { path: string; candidateNote?: string }[];
+	unresolvedAttachments: { path: string; value: string; candidate?: string }[];
+	orphanAttachments: { path: string; candidateNote?: string }[];
+	legacyPdf: { path: string; value: string }[];
 	stale: { path: string; status: string; days: number }[];
 	missingType: string[];
 	unknownType: { path: string; type: string }[];
 	missingFields: { path: string; type: string; fields: string[] }[];
 	duplicates: DuplicateGroup[];
-	repairs: PdfRepair[];
+	repairs: AttachmentRepair[];
 }
 
 const text = (v: unknown) => (Array.isArray(v) ? asText(v[0]) : asText(v)).trim();
@@ -92,8 +104,9 @@ export function checkHealth(input: HealthInput, o: HealthOptions): HealthReport 
 		missingCitekey: [],
 		duplicateCitekeys: [],
 		filenameMismatch: [],
-		unresolvedPdf: [],
-		orphanPdfs: [],
+		unresolvedAttachments: [],
+		orphanAttachments: [],
+		legacyPdf: [],
 		stale: [],
 		missingType: [],
 		unknownType: [],
@@ -105,15 +118,16 @@ export function checkHealth(input: HealthInput, o: HealthOptions): HealthReport 
 	const keys = new Map<string, { citekey: string; paths: string[] }>();
 	const watched = new Set(o.staleStatuses.map((s) => s.trim()).filter(Boolean));
 
-	// PDFs by lower-case file name, for finding one named after a citekey.
-	const pdfsByName = new Map<string, { path: string; inAttachments: boolean }[]>();
-	for (const pdf of input.pdfs) {
-		const k = fileName(pdf.path).toLowerCase();
-		pdfsByName.set(k, [...(pdfsByName.get(k) ?? []), pdf]);
+	// Files by lower-case file name, for finding one named after a citekey.
+	const filesByName = new Map<string, { path: string; inAttachments: boolean }[]>();
+	for (const f of input.files) {
+		const k = fileName(f.path).toLowerCase();
+		filesByName.set(k, [...(filesByName.get(k) ?? []), f]);
 	}
-	/** The one PDF named after the note, preferring the attachments folder; undefined if none or ambiguous. */
-	const candidateFor = (n: HealthNote): string | undefined => {
-		const found = [...new Set(n.pdfNames.map((x) => x.toLowerCase()))].flatMap((x) => pdfsByName.get(x) ?? []);
+	/** The one file of this format named after the note, preferring the attachments folder; undefined if none or ambiguous. */
+	const candidateFor = (n: HealthNote, ext: string): string | undefined => {
+		if (!ext) return undefined;
+		const found = [...new Set(n.attachmentNames.map((x) => `${x}.${ext}`.toLowerCase()))].flatMap((x) => filesByName.get(x) ?? []);
 		const inAtt = found.filter((f) => f.inAttachments);
 		const pool = inAtt.length ? inAtt : found;
 		return pool.length === 1 ? pool[0].path : undefined;
@@ -139,11 +153,21 @@ export function checkHealth(input: HealthInput, o: HealthOptions): HealthReport 
 				r.filenameMismatch.push({ path: n.path, citekey, expected: n.expectedBasename });
 		}
 
-		if (n.pdf && !n.pdf.resolves) {
-			const candidate = citekey ? candidateFor(n) : undefined;
-			r.unresolvedPdf.push({ path: n.path, value: n.pdf.value, candidate });
-			if (candidate) r.repairs.push({ note: n.path, pdf: candidate, previous: n.pdf.value });
+		// The earlier PDF property moves with the note's first repair, or on its own.
+		let legacy = n.legacyPdf;
+		if (legacy !== undefined) r.legacyPdf.push({ path: n.path, value: legacy });
+		const linkedHere = new Set(n.attachments.map((a) => a.resolvesTo).filter((x): x is string => !!x));
+		for (const a of n.attachments) {
+			if (a.resolvesTo) continue;
+			const candidate = citekey ? candidateFor(n, extensionOf(unlinked(a.value))) : undefined;
+			r.unresolvedAttachments.push({ path: n.path, value: a.value, candidate });
+			if (candidate && !linkedHere.has(candidate)) {
+				r.repairs.push({ note: n.path, file: candidate, previous: a.value, legacy });
+				linkedHere.add(candidate);
+				legacy = undefined;
+			}
 		}
+		if (legacy !== undefined) r.repairs.push({ note: n.path, legacy });
 
 		if (o.staleDays > 0) {
 			const status = text(fm[p.status]);
@@ -168,18 +192,35 @@ export function checkHealth(input: HealthInput, o: HealthOptions): HealthReport 
 
 	r.duplicateCitekeys = [...keys.values()].filter((e) => e.paths.length > 1).sort((a, b) => (a.citekey < b.citekey ? -1 : 1));
 
-	// PDFs in the attachments folder that no reference note links to.
-	const withoutPdf = notes.filter((n) => n.frontmatter && !n.pdf);
-	const repaired = new Set(r.repairs.map((x) => x.pdf));
-	for (const pdf of input.pdfs.filter((f) => f.inAttachments && !linked.has(f.path)).sort(byPath)) {
-		const name = fileName(pdf.path).toLowerCase();
-		const owners = withoutPdf.filter((n) => text(n.frontmatter?.[p.citekey]) && n.pdfNames.some((x) => x.toLowerCase() === name));
+	// Files in the attachments folder that no reference note links to. One named after the
+	// citekey of a note with no file in its format can be linked to that note.
+	const repaired = new Set(r.repairs.map((x) => x.file));
+	for (const file of input.files.filter((f) => f.inAttachments && !linked.has(f.path)).sort(byPath)) {
+		const name = fileName(file.path).toLowerCase();
+		const ext = extensionOf(file.path);
+		const owners = notes.filter(
+			(n) =>
+				n.frontmatter &&
+				text(n.frontmatter[p.citekey]) &&
+				!n.attachments.some((a) => extensionOf(a.resolvesTo ?? unlinked(a.value)) === ext) &&
+				n.attachmentNames.some((x) => `${x}.${ext}`.toLowerCase() === name)
+		);
 		const candidateNote = owners.length === 1 ? owners[0].path : undefined;
-		r.orphanPdfs.push({ path: pdf.path, candidateNote });
-		if (candidateNote && !repaired.has(pdf.path) && candidateFor(owners[0]) === pdf.path) r.repairs.push({ note: candidateNote, pdf: pdf.path });
+		r.orphanAttachments.push({ path: file.path, candidateNote });
+		if (candidateNote && !repaired.has(file.path) && candidateFor(owners[0], ext) === file.path) {
+			// Fold this note's legacy move into this repair, so the note gets one change.
+			const legacyMove = r.repairs.findIndex((x) => x.note === candidateNote && x.legacy !== undefined && !x.file);
+			const legacy = legacyMove === -1 ? undefined : r.repairs.splice(legacyMove, 1)[0].legacy;
+			r.repairs.push({ note: candidateNote, file: file.path, legacy });
+		}
 	}
-	r.repairs.sort((a, b) => (a.note < b.note ? -1 : 1));
+	r.repairs.sort((a, b) => (a.note < b.note ? -1 : a.note > b.note ? 1 : 0));
 	return r;
+}
+
+/** A link-ish value's link path: no brackets, alias or subpath. */
+function unlinked(value: string): string {
+	return value.replace(/^\[\[/, "").replace(/\]\]$/, "").split("|")[0].split("#")[0].trim();
 }
 
 /** A CSL field from missingFields as the property a person fills in. */
@@ -211,8 +252,9 @@ export function problemCount(r: HealthReport): number {
 		r.missingCitekey.length +
 		r.duplicateCitekeys.length +
 		r.filenameMismatch.length +
-		r.unresolvedPdf.length +
-		r.orphanPdfs.length +
+		r.unresolvedAttachments.length +
+		r.orphanAttachments.length +
+		r.legacyPdf.length +
 		r.stale.length +
 		r.missingType.length +
 		r.unknownType.length +
@@ -239,6 +281,8 @@ export interface ReportContext {
 	/** Command names, as shown in the command palette. */
 	commands: { check: string; relink: string; review: string; mergeCurrent: string };
 	properties: Record<PropertyKey, string>;
+	/** The property earlier versions kept a reference's PDF in. */
+	legacyPdfProperty: string;
 }
 
 /** The report note's Markdown: a summary table, then one section per check with problems. */
@@ -257,8 +301,9 @@ export function healthReportMarkdown(r: HealthReport, c: ReportContext): string 
 		["No citekey", r.missingCitekey.length],
 		["Citekeys used by more than one note", r.duplicateCitekeys.length],
 		["Filename doesn't match the citekey", r.filenameMismatch.length],
-		[`${p.pdf} links that don't resolve`, r.unresolvedPdf.length],
-		["PDFs in the attachments folder with no note", r.orphanPdfs.length],
+		[`Links in ${p.attachments} that don't resolve`, r.unresolvedAttachments.length],
+		["Files in the attachments folder with no note", r.orphanAttachments.length],
+		[`Notes with the old ${c.legacyPdfProperty} property`, r.legacyPdf.length],
 		["Possible duplicates", r.duplicates.length],
 		[`In one status for more than ${c.staleDays} days`, r.stale.length],
 		[`No ${p.type}`, r.missingType.length + r.unknownType.length],
@@ -292,14 +337,19 @@ export function healthReportMarkdown(r: HealthReport, c: ReportContext): string 
 		"Rename the note (links update), or correct the citekey property."
 	);
 	section(
-		`${p.pdf} links that don't resolve`,
-		r.unresolvedPdf.map((u) => `${pathLink(u.path)}: ${code(u.value)}${u.candidate ? `. Found ${pathLink(u.candidate)}` : ""}`),
-		r.unresolvedPdf.some((u) => u.candidate) ? `Run ${cmd(c.commands.relink)} to point these at the PDF named after the citekey. You see each change before it is made.` : ""
+		`Links in ${p.attachments} that don't resolve`,
+		r.unresolvedAttachments.map((u) => `${pathLink(u.path)}: ${code(u.value)}${u.candidate ? `. Found ${pathLink(u.candidate)}` : ""}`),
+		r.unresolvedAttachments.some((u) => u.candidate) ? `Run ${cmd(c.commands.relink)} to point these at the file of the same format named after the citekey. You see each change before it is made.` : ""
 	);
 	section(
-		"PDFs in the attachments folder with no note",
-		r.orphanPdfs.map((o) => `${pathLink(o.path)}${o.candidateNote ? `, named like ${pathLink(o.candidateNote)}` : ""}`),
-		`No reference note links to these.${r.orphanPdfs.some((o) => o.candidateNote) ? ` ${cmd(c.commands.relink)} can link the ones named after a note's citekey.` : ""}`
+		"Files in the attachments folder with no note",
+		r.orphanAttachments.map((o) => `${pathLink(o.path)}${o.candidateNote ? `, named like ${pathLink(o.candidateNote)}` : ""}`),
+		`No reference note links to these.${r.orphanAttachments.some((o) => o.candidateNote) ? ` ${cmd(c.commands.relink)} can link the ones named after a note's citekey.` : ""}`
+	);
+	section(
+		`Notes with the old ${c.legacyPdfProperty} property`,
+		r.legacyPdf.map((l) => `${pathLink(l.path)}: ${code(l.value)}`),
+		`Stacks now keeps every file in ${p.attachments} and still reads ${c.legacyPdfProperty} until it is moved. Run ${cmd(c.commands.relink)} to move each into ${p.attachments} and remove ${c.legacyPdfProperty}.`
 	);
 	section(
 		"Possible duplicates",

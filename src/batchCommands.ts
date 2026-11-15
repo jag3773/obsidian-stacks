@@ -87,7 +87,7 @@ export async function createLibraryBase(plugin: LibraryPlugin): Promise<TFile | 
 	for (let i = 1; app.vault.getAbstractFileByPath(path); i++) path = `Library ${i}.base`;
 	let file: TFile;
 	try {
-		file = await app.vault.create(path, stringifyYaml(starterBase(s.referencesFolder, s.propertyNames, s.statuses)));
+		file = await app.vault.create(path, stringifyYaml(starterBase(s.referencesFolder, s.propertyNames, s.statuses, s.preferredFormats)));
 	} catch (e) {
 		new Notice(`Stacks: couldn't create ${path}: ${e instanceof Error ? e.message : String(e)}`);
 		return null;

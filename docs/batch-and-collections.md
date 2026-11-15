@@ -23,10 +23,10 @@ Run **Stacks: Create library base** (or press **Create base** in the settings). 
 
 | View | Shows |
 |---|---|
-| Library | Every reference, grouped by status |
+| Library | Every reference, grouped by status, with a **File** column that opens its [main file](attachments.md#the-main-file) |
 | One view per status | With the default statuses: Queued, Reading, Reviewing, Processed, Shelved. The reading workflow is queued → reading → reviewing → processed, with shelved for things you decided not to read now |
 | Unfiled | References in no collection (`collections` is empty) |
-| Missing PDF | References with no `pdf` link |
+| Missing file | References with no file in one of your **Preferred formats** (PDF or ebook by default) in `attachments`. See [files and the main file](attachments.md) |
 
 If no library base is set in the settings yet, the new file becomes the library base. Edit the views freely afterwards; Stacks only reads the base to learn your folder and property names.
 

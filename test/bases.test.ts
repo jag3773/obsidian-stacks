@@ -134,7 +134,7 @@ test("the starter base round-trips through YAML with awkward names", () => {
 // PR #14 review: a starter base reads back to the exact mapping it was made from.
 test("reading a starter base back recovers every custom mapping", () => {
 	const names = matchProperties([]);
-	Object.assign(names, { title: "name", url: "source", doi: "digitalId", isbn: "bookNumber", publisher: "imprint", pdf: "scan", citekey: "Citation Key" });
+	Object.assign(names, { title: "name", url: "source", doi: "digitalId", isbn: "bookNumber", publisher: "imprint", attachments: "scan", citekey: "Citation Key" });
 	const config = parse(stringify(starterBase("Lib", names)));
 	const again = matchProperties(basePropertyNames(config), baseDisplayNames(config));
 	assert.deepEqual(again, names);

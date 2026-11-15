@@ -13,7 +13,7 @@ import {
 	runBatch,
 	sameLinkTarget,
 } from "../src/batch";
-import { baseFolder, matchProperties, starterBase, validateBase } from "../src/bases";
+import { baseFolder, mainFileFormula, matchProperties, missingFileFilter, starterBase, validateBase } from "../src/bases";
 import { NetworkTracker, sameBytes } from "../src/sync";
 
 const props = { status: "status", collections: "collections" };
@@ -154,20 +154,41 @@ test("scopes from resolved links: what a note links to and what links to it", ()
 
 // ---------------------------------------------------------------- library base
 
-test("the library base has a view per status, plus unfiled and missing PDF", () => {
+test("the library base has a view per status, plus unfiled and missing file, and a main-file column", () => {
 	const names = matchProperties([]);
-	Object.assign(names, { status: "Reading status", collections: "topics", pdf: "scan" });
-	const config = parse(stringify(starterBase("Library/Refs", names, ["queued", "reading", "reviewing", "processed", "shelved", "reading", " "])));
+	Object.assign(names, { status: "Reading status", collections: "topics", attachments: "files" });
+	const config = parse(stringify(starterBase("Library/Refs", names, ["queued", "reading", "reviewing", "processed", "shelved", "reading", " "], ["epub", "pdf"])));
 	assert.equal(validateBase(config), null);
 	assert.equal(baseFolder(config), "Library/Refs");
-	const views = config.views as { name: string; filters?: string }[];
+	const views = config.views as { name: string; filters?: string; order?: string[] }[];
 	assert.deepEqual(
 		views.map((v) => v.name),
-		["Library", "Queued", "Reading", "Reviewing", "Processed", "Shelved", "Unfiled", "Missing PDF"]
+		["Library", "Queued", "Reading", "Reviewing", "Processed", "Shelved", "Unfiled", "Missing file"]
 	);
 	assert.equal(views[2].filters, `note["Reading status"] == "reading"`);
 	assert.equal(views[6].filters, `note["topics"].isEmpty()`);
-	assert.equal(views[7].filters, `note["scan"].isEmpty()`);
+	assert.equal(views[7].filters, missingFileFilter("files", ["epub", "pdf"]));
+	assert.equal(config.formulas.file, mainFileFormula("files", ["epub", "pdf"]));
+	assert.equal(views[0].order?.[1], "formula.file");
+});
+
+// The expressions were checked in Obsidian 1.10.3 and 1.15.1 (see test/e2e/specs/bases).
+test("attachment formulas: preferred formats in order, guarded against empty and broken values", () => {
+	assert.equal(
+		missingFileFilter("attachments", ["pdf", "epub"]),
+		`note["attachments"].isEmpty() || list(note["attachments"]).filter(value.asFile() && ["pdf", "epub"].contains(value.asFile().ext.lower())).isEmpty()`
+	);
+	assert.equal(missingFileFilter("attachments", []), `note["attachments"].isEmpty() || list(note["attachments"]).filter(value.asFile()).isEmpty()`);
+	const L = `list(note["attachments"])`;
+	const pick = (cond: string) => `${L}.filter(${cond}).length > 0, ${L}.filter(${cond})[0].asFile().asLink("📄")`;
+	const pdf = `value.asFile() && value.asFile().ext.lower() == "pdf"`;
+	const epub = `value.asFile() && value.asFile().ext.lower() == "epub"`;
+	assert.equal(
+		mainFileFormula("attachments", ["pdf", "epub"]),
+		`if(note["attachments"].isEmpty(), "", if(${pick(pdf)}, if(${pick(epub)}, if(${pick("value.asFile()")}, ""))))`
+	);
+	// A property name with quotes stays one string literal.
+	assert.match(missingFileFilter('my "files"', ["pdf"]), /^note\["my \\"files\\""\]\.isEmpty\(\)/);
 });
 
 test("a status with quotes is a valid expression literal", () => {
