@@ -141,7 +141,9 @@ describe("Library base in Bases", function () {
 			for (const row of Array.from(el.querySelectorAll(".bases-tbody .bases-tr"))) {
 				const cells = Array.from(row.querySelectorAll(".bases-td"));
 				const title = cells[0]?.textContent?.trim() ?? "";
-				out[title] = cells[1]?.querySelector("a.internal-link")?.getAttribute("href") ?? "";
+				// Bases renders these links as <span class="internal-link" data-href>, in older versions as <a href>.
+				const link = cells[1]?.querySelector(".internal-link");
+				out[title] = link?.getAttribute("data-href") ?? link?.getAttribute("href") ?? "";
 			}
 			return out;
 		});

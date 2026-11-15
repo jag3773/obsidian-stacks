@@ -52,7 +52,9 @@ describe("Check library health", function () {
 		await expect(modal.$(".modal-title")).toHaveText("Repair attachment links");
 		// One toggle per repair (the button row has none).
 		await expect(modal.$$(".checkbox-container")).toBeElementsArrayOfSize(2);
-		await modal.$("button=Repair").click();
+		// Clicked through the DOM, as closeModals does: a WebDriver click doesn't reach the
+		// button in the emulated phone layout.
+		await browser.executeObsidian(() => (Array.from(document.querySelectorAll(".modal-container .modal button")).find((b) => b.textContent === "Repair") as HTMLElement).click());
 		await waitForNotice("Stacks: repaired 2 notes.");
 		await browser.waitUntil(async () => (await frontmatter("References/turingComputingMachinery1950.md"))?.pdf === undefined, { timeoutMsg: "pdf property not moved" });
 		expect((await frontmatter("References/turingComputingMachinery1950.md"))?.attachments).toEqual(["[[turingComputingMachinery1950.pdf]]"]);
