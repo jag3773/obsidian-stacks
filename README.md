@@ -2,23 +2,24 @@
 
 ### Your sources. Your ideas. One home.
 
-The paper you saved. The passage that changed your mind. The note that became a talk, a thesis, or your next project. Bring them together in Obsidian.
+The paper you saved. The ebook you're halfway through. The passage that changed your mind. The note that became a talk, a thesis, or your next project. Bring them together in Obsidian.
 
 **Stacks is building a complete research workflow inside your vault: collect sources, read deeply, connect ideas, and write with confidence.**
 
 If Obsidian is where you think, it should be enough to manage the sources behind that thinking, too. That is the ambition: one app for your library and the knowledge you make from it.
 
-[Get started](#get-started) · [Available today](#available-today) · [Try it and tell us](#try-it-and-tell-us) · [The road ahead](#the-road-ahead)
+[Get started](#get-started) · [Every format your library comes in](#every-format-your-library-comes-in) · [Available today](#available-today) · [Try it and tell us](#try-it-and-tell-us) · [The road ahead](#the-road-ahead)
 
-> **Early release.** Stacks is in Obsidian's community plugin directory. Capture, metadata lookup, citekeys, PDF filing, library views, annotation extraction, imports, bibliography export, formatted citations, and library maintenance are all available. It is young software, tested on its author's own vault so far, so keep a backup of your vault and [tell us](#try-it-and-tell-us) what you find.
+> **Early release.** Stacks is in Obsidian's community plugin directory. Capture, metadata lookup, citekeys, filing PDFs, ebooks and documents, library views, annotation extraction, imports, bibliography export, formatted citations, and library maintenance are all available. It is young software, tested on its author's own vault so far, so keep a backup of your vault and [tell us](#try-it-and-tell-us) what you find.
 
 ## Get started
 
 1. **Install Stacks.** In Obsidian, open **Settings → Community plugins**, choose **Browse**, search for **Stacks**, then install and enable it. (Other options are under [Install](#install).)
-2. **Choose your folders.** Open **Settings → Stacks**. Under **Folders**, set your **References folder** (where reference notes live), **Attachments folder** (where PDFs, ebooks and other files are filed), and **Inbox folder** (where new clips and PDFs land). The defaults, `References`, `References/attachments` and `Inbox`, work fine if you have no preference.
+2. **Choose your folders.** Open **Settings → Stacks**. Under **Folders**, set your **References folder** (where reference notes live), **Attachments folder** (where PDFs, ebooks and other files are filed), and **Inbox folder** (where new clips, PDFs, ebooks and documents land). The defaults, `References`, `References/attachments` and `Inbox`, work fine if you have no preference.
 3. **Create your Stacks base.** Further down, under **Base**, press **Create base**. Stacks writes a starter base, `Stacks.base`, with views for each reading status, so you can browse your library right away. (Already have a Base? Pick it in the **Base** field instead.) Bases must be enabled in Obsidian.
 4. **Add your first reference.** Click the **Add reference** icon (the library icon) in the left ribbon, or run **Stacks: Add reference** from the command palette. Paste an ISBN, DOI, arXiv ID, or URL. Stacks looks up the details, creates the note, and opens it.
-5. **Clip from the web.** Install [Obsidian Web Clipper](https://obsidian.md/clipper) in your browser and set it to save into your inbox folder. Anything you clip lands in the inbox, and Stacks picks it up automatically: it fills in the metadata, gives the note a citekey, and files it in your references folder. You can drop PDFs into the inbox too. For a ready-made template, see [capturing with Web Clipper](docs/web-clipper.md).
+5. **Clip from the web.** Install [Obsidian Web Clipper](https://obsidian.md/clipper) in your browser and set it to save into your inbox folder. Anything you clip lands in the inbox, and Stacks picks it up automatically: it fills in the metadata, gives the note a citekey, and files it in your references folder. For a ready-made template, see [capturing with Web Clipper](docs/web-clipper.md).
+6. **Drop in your files.** Put a PDF, an EPUB or Kobo ebook, a Kindle book, or a Word or OpenDocument file in the inbox. Stacks reads its ISBN or DOI, looks it up, creates the reference note and files the file beside it. See [every format your library comes in](#every-format-your-library-comes-in).
 
 That's it. Your library is a set of ordinary notes in your vault, ready to link, read, and cite.
 
@@ -26,16 +27,34 @@ That's it. Your library is a set of ordinary notes in your vault, ready to link,
 
 A source deserves a place beside the ideas it inspires. Link an article to a project. Connect an author to a person note. Follow a book into a question, an experiment, or a draft. Use Obsidian's links, properties, search, and Bases to work with your references alongside the rest of your vault.
 
-Each source is an ordinary Markdown note. Its metadata lives in properties; its PDFs live in ordinary folders. Your reading notes stay yours. The library remains useful if you remove the plugin.
+Each source is an ordinary Markdown note. Its metadata lives in properties; its PDFs, ebooks and other files live in ordinary folders. Your reading notes stay yours. The library remains useful if you remove the plugin.
 
 Zotero has helped researchers collect, organize, and cite their work for years. Stacks shares that respect for careful research and takes an Obsidian-first approach: bring those essential workflows into the place where your knowledge already lives. The goal is to make a separate reference manager optional for Obsidian users.
+
+## Every format your library comes in
+
+Not every library is a folder of PDFs. Yours might be ebooks bought over the years, Kindle books, a shelf of Kobo downloads, or reports that arrive as Word files. Stacks files them all the same way.
+
+| Drop in | Stacks reads |
+|---|---|
+| **PDF** | A DOI, ISBN or PubMed ID in the first pages, and the document's title and author |
+| **EPUB**, including **Kobo** `.kepub` | The book's own ISBN, title, authors, publisher and date, or the ISBN on its copyright page |
+| **Kindle** `.mobi`, `.azw`, `.azw3` | The ISBN, title, authors, publisher and date in the book's header, which is readable even when the book has DRM |
+| **Word** `.docx` and **OpenDocument** `.odt` | The title and author, and a DOI or ISBN in the text |
+
+- **Identified, not just renamed.** Stacks looks each file up by its ISBN or DOI, and the file's own details fill whatever the lookup lacks. When nothing is found, the file alone is enough to start a reference: a book for an ebook, a document otherwise.
+- **One reference, every copy.** Drop the EPUB of a book you already have and it joins that reference, beside the PDF. Every file a source has lives in its `attachments` list: the book, a chapter scan, the slides that came with a talk.
+- **Your format comes first.** Set your **Preferred formats** (`pdf, epub` by default, or `epub, pdf` for an ebook library). A reference's main file is its attachment in your first format. The library base's **File** column opens it, and its **Missing file** view shows what has none.
+- **Kept healthy.** **Check library health** finds broken links and unlinked files in every format. Its repair relinks an ebook only to an ebook and a PDF only to a PDF, after a preview.
+
+Highlights and the tablet round trip work with PDFs today. Upgrading from 0.4? Notes with the old `pdf` property keep working unchanged, and **Repair attachment links** moves it into `attachments` after a preview. See [files and the main file](docs/attachments.md).
 
 ## Available today
 
 - **Save a source by identifier.** Paste an ISBN, DOI, arXiv ID, or URL. Stacks looks up metadata, checks for an existing reference, creates a note, and opens it.
 - **Turn an inbox into a library.** Drop in a Web Clipper note, a PDF, an ebook (EPUB, Kobo or Kindle) or a Word or OpenDocument file. Clipped notes are enriched and filed; what Web Clipper saved (author, published date, description) fills anything the lookup can't find, which covers sites that turn Stacks away. Looked-up values replace the guesses Web Clipper made from the page, such as its page title; the URL and status are kept. Files are checked for an ISBN or DOI, in an ebook's own metadata or a PDF's opening pages, paired with a reference note, and moved into your attachments folder. An ebook of a book you already have is attached to it. When a lookup cannot identify a file, its own metadata or filename provides a starting point. See [files and the main file](docs/attachments.md#dropping-files-in-the-inbox).
-- **Clip from the browser.** Obsidian Web Clipper is the main way in; see [capturing with Web Clipper](docs/web-clipper.md) for the properties Stacks reads and a template to import. PubMed records and IDs (`PMID: 12345678`) and COinS on catalog and repository pages are read too.
 - **Keep files in any format.** A reference's PDF, ebook and other files all go in its `attachments`. Its main file is the one in your most preferred format, `pdf, epub` by default, so an ebook library works as well as a PDF one. See [files and the main file](docs/attachments.md).
+- **Clip from the browser.** Obsidian Web Clipper is the main way in; see [capturing with Web Clipper](docs/web-clipper.md) for the properties Stacks reads and a template to import. PubMed records and IDs (`PMID: 12345678`) and COinS on catalog and repository pages are read too.
 - **Find an open-access PDF.** **Find PDF for current reference** checks Unpaywall and the work's landing page, shows which copy and version it found, and attaches it only after you confirm. See [Find PDF](docs/find-pdf.md).
 - **Complete a reference as you write.** Add an ISBN, DOI, or URL property to a note in your references folder. Stacks can fill missing metadata and name the note for you. Metadata enrichment preserves populated properties and the existing note body.
 - **Start with the details that matter.** References come with a title, authors, publication date (`published`), year, abstract, and, where the source has them, publisher, ISBN, or DOI. Book pages on Amazon, Goodreads, and Kobo, GitHub repositories, and news and blog articles are read the way Zotero's translators read them.
@@ -66,6 +85,7 @@ No separate library database to maintain. The notes and files in your vault are 
 
 The destination is the whole journey: **collect → read → understand → write → cite**. Most of that path now exists in a first form. What comes next is making it dependable for more people and more kinds of libraries:
 
+- **Highlights beyond PDFs.** Ebooks and documents are filed and linked today; bringing their highlights into notes, as Stacks does for PDFs, is still ahead.
 - **Many devices.** Stacks is built to work with whatever sync you already use, but it has not yet been tested on phones, tablets, or sync services beyond one setup. See [mobile and offline reliability](https://github.com/jag3773/obsidian-stacks/issues/30).
 - **Rougher edges of real libraries.** Probable duplicates (not just exact ones), several references in one pass of the citation picker, and capturing many results from a search page at once.
 - **Your workflows.** What still sends you back to another reference manager decides what Stacks builds next.
