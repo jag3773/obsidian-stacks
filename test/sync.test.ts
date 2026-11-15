@@ -396,23 +396,23 @@ test("#27 a batch completion skips a note whose identifier changed during the lo
 test("#27 Create library base writes a new file and never overwrites one", async () => {
 	const app = new App();
 	const plugin = await setupPlugin(app);
-	app.vault.addFile("Library.base", "mine: true\n");
+	app.vault.addFile("Stacks.base", "mine: true\n");
 	const cmd = (plugin as any).commands.find((c: any) => c.id === "create-library-base");
 	cmd.callback();
 	await flush();
-	const created = app.vault.getAbstractFileByPath("Library 1.base") as TFile;
+	const created = app.vault.getAbstractFileByPath("Stacks 1.base") as TFile;
 	assert.ok(created);
-	assert.equal(await app.vault.read(app.vault.getAbstractFileByPath("Library.base") as TFile), "mine: true\n");
+	assert.equal(await app.vault.read(app.vault.getAbstractFileByPath("Stacks.base") as TFile), "mine: true\n");
 	const config = parseYaml(await app.vault.read(created));
 	assert.deepEqual(
 		config.views.map((v: any) => v.name),
 		["Library", "Queued", "Reading", "Reviewing", "Processed", "Shelved", "Unfiled", "Missing PDF"]
 	);
-	assert.equal(plugin.settings.libraryBase, "Library 1.base", "adopted when none was set");
+	assert.equal(plugin.settings.libraryBase, "Stacks 1.base", "adopted when none was set");
 	cmd.callback();
 	await flush();
-	assert.ok(app.vault.getAbstractFileByPath("Library 2.base"));
-	assert.equal(plugin.settings.libraryBase, "Library 1.base", "an existing choice is kept");
+	assert.ok(app.vault.getAbstractFileByPath("Stacks 2.base"));
+	assert.equal(plugin.settings.libraryBase, "Stacks 1.base", "an existing choice is kept");
 	plugin.unload();
 });
 

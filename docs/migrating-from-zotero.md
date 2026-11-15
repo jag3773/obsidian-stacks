@@ -83,7 +83,7 @@ Pick 30 to 40 notes that cover every combination you care about, not a random sl
 
 Copy them into a separate folder (or a copy of your vault), point the Stacks references folder at it, and run **Stacks: Import from Zotero** on just those notes (step 6 explains the dialog; turn off **Create notes for items without one** so the whole library isn't created there). The import adds properties and leaves bodies, `aliases` and `cssclass` exactly as they were.
 
-Then build a Base (`Library.base`) that shows only converted notes, so the sample is all you see:
+Then build a Base (`Stacks.base`) that shows only converted notes, so the sample is all you see:
 
 ```yaml
 filters:
@@ -189,7 +189,7 @@ Check afterwards that no links to the removed notes remain.
 
 Once you've worked through the import report, delete it. Then update anything that read the old format:
 
-- **Dataview queries** on inline fields (`Topics::`, `Tags::`) can become embedded Base views, for example `![[Library.base#Queue]]`.
+- **Dataview queries** on inline fields (`Topics::`, `Tags::`) can become embedded Base views, for example `![[Stacks.base#Queue]]`.
 - **Scripts or AI agents** that found new items by modification time can use properties instead. For example: notes where `status` is `processed` and an `ingested` property is empty.
 - **Vault instructions or READMEs** that describe the old Zotero export as read-only should explain the new properties and Base.
 
