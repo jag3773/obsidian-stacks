@@ -5,7 +5,9 @@
 // including note[...].isEmpty() on notes that lack the property, have an empty list or an
 // empty string, without an error, and the views select exactly the expected notes. Rows are
 // read from the Bases query controller's results (the internal API behind the table) and
-// cross-checked against the rendered table and its result count.
+// cross-checked against the rendered table and its result count. The table only draws the
+// rows that fit in the window (CI tiles two Obsidian windows side by side), so it is scrolled
+// through and every row it draws is collected.
 import { browser, expect } from "@wdio/globals";
 import { beforeEach, describe, it } from "mocha";
 import { frontmatter, read, resetLibrary, runCommand, waitForFiles, waitForNotice } from "../../helpers/stacks";
@@ -15,7 +17,10 @@ interface ViewResult {
 	errorText: string;
 	files: string[];
 	count: string;
+	/** The text of each table row, once each, in the order drawn. */
 	rendered: string[];
+	/** By row title (the first cell): the link target in the second cell (the File column), or "". */
+	secondCellLinks: Record<string, string>;
 }
 
 /** Open a view of a base in the active tab and read what it shows once its query has run. */
@@ -32,13 +37,35 @@ async function openView(file: string, viewName: string): Promise<ViewResult> {
 				await new Promise((r) => setTimeout(r, 100));
 			await new Promise((r) => setTimeout(r, 500));
 			const el = view.containerEl as HTMLElement;
+			// Every row, scrolling the table's scroller from top to bottom: rows off screen aren't drawn.
+			const rows = new Map<string, { text: string; link: string }>();
+			const collect = () => {
+				for (const row of Array.from(el.querySelectorAll(".bases-tbody .bases-tr"))) {
+					const cells = Array.from(row.querySelectorAll(".bases-td"));
+					const title = cells[0]?.textContent?.trim() ?? "";
+					// Bases renders links as <span class="internal-link" data-href>, in older versions as <a href>.
+					const link = cells[1]?.querySelector(".internal-link");
+					rows.set(title, { text: row.textContent ?? "", link: link?.getAttribute("data-href") ?? link?.getAttribute("href") ?? "" });
+				}
+			};
+			let scroller = el.querySelector(".bases-tbody") as HTMLElement | null;
+			while (scroller && !(scroller.scrollHeight > scroller.clientHeight && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement;
+			collect();
+			for (let i = 0; scroller && i < 50; i++) {
+				const before = scroller.scrollTop;
+				scroller.scrollTop = before + Math.max(50, scroller.clientHeight * 0.7);
+				await new Promise((r) => setTimeout(r, 150));
+				collect();
+				if (scroller.scrollTop === before) break;
+			}
+			if (scroller) scroller.scrollTop = 0;
 			return {
 				error: c.error ? String(c.error) : null,
 				errorText: Array.from(el.querySelectorAll(".bases-error")).map((e) => e.textContent ?? "").join(""),
 				files: Array.from((c.results as Map<{ path: string }, unknown>).keys()).map((f) => f.path).sort(),
 				count: el.querySelector(".bases-toolbar-result-count")?.textContent ?? "",
-				// The text of each rendered table row.
-				rendered: Array.from(el.querySelectorAll(".bases-tbody .bases-tr")).map((r) => r.textContent ?? ""),
+				rendered: [...rows.values()].map((r) => r.text),
+				secondCellLinks: Object.fromEntries([...rows].map(([title, r]) => [title, r.link])),
 			};
 		},
 		file,
@@ -152,19 +179,7 @@ describe("Library base in Bases", function () {
 	it("links each reference's main file in the File column", async function () {
 		await runCommand("create-library-base");
 		await waitForFiles("", (p) => p.includes("Stacks.base"), "no Stacks.base");
-		await openView("Stacks.base", "Library");
-		const links = await browser.executeObsidian(({ app }) => {
-			const el = (app.workspace.getMostRecentLeaf()!.view as any).containerEl as HTMLElement;
-			const out: Record<string, string> = {};
-			for (const row of Array.from(el.querySelectorAll(".bases-tbody .bases-tr"))) {
-				const cells = Array.from(row.querySelectorAll(".bases-td"));
-				const title = cells[0]?.textContent?.trim() ?? "";
-				// Bases renders these links as <span class="internal-link" data-href>, in older versions as <a href>.
-				const link = cells[1]?.querySelector(".internal-link");
-				out[title] = link?.getAttribute("data-href") ?? link?.getAttribute("href") ?? "";
-			}
-			return out;
-		});
+		const links = (await openView("Stacks.base", "Library")).secondCellLinks;
 		expect(links).toEqual({
 			"Creating Shared Value": "References/attachments/porterCreatingSharedValue2011.pdf",
 			"The Art of Computer Programming": "References/attachments/knuthArtComputerProgramming1968.EPUB",
