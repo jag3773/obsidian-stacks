@@ -94,21 +94,18 @@ filters:
 formulas:
   name: file.asLink(title)
   pdf_icon: 'if(pdf, link(pdf.toString().replace("[[", "").replace("]]", ""), "📄"), "")'
-  links_in: file.backlinks.length
 properties:
   formula.name:
     displayName: Title
   formula.pdf_icon:
     displayName: PDF
-  formula.links_in:
-    displayName: Backlinks
 views:
   - type: table
     name: Library
     groupBy:
       property: status
       direction: ASC
-    order: [formula.name, authors, year, collections, highlights, formula.links_in, formula.pdf_icon]
+    order: [formula.name, authors, year, collections, highlights, formula.pdf_icon]
   - type: table
     name: Queue
     filters: 'status == "queued"'
@@ -126,10 +123,11 @@ views:
     order: [formula.name, authors, year, status]
 ```
 
-Two details matter here:
+Three details matter here:
 
 - **Clickable titles.** A plain `title` property isn't a link in a Base. The `name` formula (`file.asLink(title)`) shows the title and opens the note.
 - **Clickable PDFs.** The `pdf_icon` formula turns the `pdf` property into a link that opens the PDF.
+- **No backlink counts.** Avoid `file.backlinks` in a library view. Obsidian marks it as [performance heavy](https://obsidian.md/help/bases/syntax), and a base that counts backlinks for thousands of references can take a long time to open. Sorting or filtering by it needs the count for every row too. To see what links to one reference, use the backlinks pane on its note.
 
 Live with the sample for a few days. This is where you find out which statuses, collections and views you actually want.
 
