@@ -50,6 +50,6 @@ Not read: Kindle KFX files (their format isn't documented), older Word `.doc` fi
 
 ## Notes from earlier versions
 
-Earlier versions of Stacks also linked the PDF in a separate `pdf` property. Stacks still reads it, as the reference's first attachment, so its PDF stays the same and nothing stops working. It no longer writes it.
+Earlier versions of Stacks also linked the PDF in a separate `pdf` property. Stacks still reads it, as the reference's first attachment, so its PDF stays the same and nothing stops working; the library base's **File** column and **Missing file** view read it the same way. It no longer writes it.
 
 **Check library health** lists the notes that still have it, and **Repair attachment links** moves each one into `attachments` and removes `pdf`, after a preview. See [library health](maintenance.md#repair-attachment-links). If your settings mapped the PDF field to another property name, that name is the one Stacks reads and moves.

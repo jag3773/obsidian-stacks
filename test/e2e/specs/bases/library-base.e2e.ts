@@ -58,6 +58,16 @@ const EDGE_CASES = {
 	"References/shannonMathematicalTheory1948.md":
 		'---\ncitekey: shannonMathematicalTheory1948\ntype: article\ntitle: A Mathematical Theory of Communication\nauthors:\n  - "[[Claude Shannon]]"\nyear: 1948\njournal: Bell System Technical Journal\ncollections: ["[[Strategy]]"]\nattachments:\n  - "[[shannon-figures.zip]]"\nstatus: shelved\n---\n',
 	"References/attachments/shannon-figures.zip": "zip",
+	// Only the pdf property earlier versions wrote: not missing a file; that PDF is the main file.
+	"References/hopperCompilers1952.md":
+		'---\ncitekey: hopperCompilers1952\ntype: report\ntitle: The Education of a Computer\nauthors:\n  - "[[Grace Hopper]]"\nyear: 1952\ncollections: ["[[Strategy]]"]\npdf: "[[hopper-scan.pdf]]"\nstatus: shelved\n---\n',
+	"References/attachments/hopper-scan.pdf": "%PDF",
+	// The old pdf property names the main PDF; attachments lists a supplement first. Stacks
+	// reads the pdf property first, and so must the base.
+	"References/lamportTimeClocks1978.md":
+		'---\ncitekey: lamportTimeClocks1978\ntype: article\ntitle: Time, Clocks, and the Ordering of Events\nauthors:\n  - "[[Leslie Lamport]]"\nyear: 1978\ncollections: ["[[Strategy]]"]\npdf: "[[lamport-paper.pdf]]"\nattachments:\n  - "[[lamport-errata.pdf]]"\n  - "[[lamport-paper.pdf]]"\nstatus: shelved\n---\n',
+	"References/attachments/lamport-paper.pdf": "%PDF",
+	"References/attachments/lamport-errata.pdf": "%PDF",
 	// Not a reference (no citekey): never in the library base.
 	"References/Reading notes.md": "---\ntitle: Notes about my reading\n---\nJust notes.\n",
 };
@@ -88,7 +98,9 @@ describe("Library base in Bases", function () {
 		const all = [
 			"References/dijkstraGoToStatement1968.md",
 			"References/hookerLaws1989.md",
+			"References/hopperCompilers1952.md",
 			"References/knuthArtComputerProgramming1968.md",
+			"References/lamportTimeClocks1978.md",
 			"References/liskovProgrammingAbstractData1974.md",
 			"References/porterCreatingSharedValue2011.md",
 			"References/shannonMathematicalTheory1948.md",
@@ -99,11 +111,17 @@ describe("Library base in Bases", function () {
 			Reading: ["References/porterCreatingSharedValue2011.md"],
 			Reviewing: [],
 			Processed: ["References/liskovProgrammingAbstractData1974.md"],
-			Shelved: ["References/knuthArtComputerProgramming1968.md", "References/shannonMathematicalTheory1948.md"],
+			Shelved: [
+				"References/hopperCompilers1952.md",
+				"References/knuthArtComputerProgramming1968.md",
+				"References/lamportTimeClocks1978.md",
+				"References/shannonMathematicalTheory1948.md",
+			],
 			// No collections property (Hooker), or an empty list (Dijkstra).
 			Unfiled: ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md"],
 			// No attachments (Hooker, Liskov), an empty string (Dijkstra), or only a file in no
-			// preferred format (Shannon). Porter has a PDF, Knuth an ebook.
+			// preferred format (Shannon). Porter has a PDF, Knuth an ebook, Hopper and Lamport a PDF
+			// in the old pdf property.
 			"Missing file": [
 				"References/dijkstraGoToStatement1968.md",
 				"References/hookerLaws1989.md",
@@ -151,6 +169,8 @@ describe("Library base in Bases", function () {
 			"Creating Shared Value": "References/attachments/porterCreatingSharedValue2011.pdf",
 			"The Art of Computer Programming": "References/attachments/knuthArtComputerProgramming1968.EPUB",
 			"A Mathematical Theory of Communication": "References/attachments/shannon-figures.zip",
+			"The Education of a Computer": "References/attachments/hopper-scan.pdf",
+			"Time, Clocks, and the Ordering of Events": "References/attachments/lamport-paper.pdf",
 			"Go To Statement Considered Harmful": "",
 			"Of the Laws of Ecclesiastical Polity": "",
 			"Programming with Abstract Data Types": "",

@@ -157,7 +157,7 @@ test("scopes from resolved links: what a note links to and what links to it", ()
 test("the library base has a view per status, plus unfiled and missing file, and a main-file column", () => {
 	const names = matchProperties([]);
 	Object.assign(names, { status: "Reading status", collections: "topics", attachments: "files" });
-	const config = parse(stringify(starterBase("Library/Refs", names, ["queued", "reading", "reviewing", "processed", "shelved", "reading", " "], ["epub", "pdf"])));
+	const config = parse(stringify(starterBase("Library/Refs", names, ["queued", "reading", "reviewing", "processed", "shelved", "reading", " "], ["epub", "pdf"], "scan")));
 	assert.equal(validateBase(config), null);
 	assert.equal(baseFolder(config), "Library/Refs");
 	const views = config.views as { name: string; filters?: string; order?: string[] }[];
@@ -167,28 +167,32 @@ test("the library base has a view per status, plus unfiled and missing file, and
 	);
 	assert.equal(views[2].filters, `note["Reading status"] == "reading"`);
 	assert.equal(views[6].filters, `note["topics"].isEmpty()`);
-	assert.equal(views[7].filters, missingFileFilter("files", ["epub", "pdf"]));
-	assert.equal(config.formulas.file, mainFileFormula("files", ["epub", "pdf"]));
+	// The old PDF property (here mapped to "scan") is read before attachments, as Stacks reads it.
+	assert.equal(views[7].filters, missingFileFilter(["scan", "files"], ["epub", "pdf"]));
+	assert.equal(config.formulas.file, mainFileFormula(["scan", "files"], ["epub", "pdf"]));
 	assert.equal(views[0].order?.[1], "formula.file");
 });
 
 // The expressions were checked in Obsidian 1.10.3 and 1.15.1 (see test/e2e/specs/bases).
-test("attachment formulas: preferred formats in order, guarded against empty and broken values", () => {
-	assert.equal(
-		missingFileFilter("attachments", ["pdf", "epub"]),
-		`note["attachments"].isEmpty() || list(note["attachments"]).filter(value.asFile() && ["pdf", "epub"].contains(value.asFile().ext.lower())).isEmpty()`
-	);
-	assert.equal(missingFileFilter("attachments", []), `note["attachments"].isEmpty() || list(note["attachments"]).filter(value.asFile()).isEmpty()`);
-	const L = `list(note["attachments"])`;
-	const pick = (cond: string) => `${L}.filter(${cond}).length > 0, ${L}.filter(${cond})[0].asFile().asLink("📄")`;
+test("attachment formulas: the old pdf property first, preferred formats in order, guarded against empty values", () => {
+	const holds = (p: string, cond: string) => `if(note["${p}"].isEmpty(), false, list(note["${p}"]).filter(${cond}).length > 0)`;
+	const pick = (p: string, cond: string) => `list(note["${p}"]).filter(${cond})[0].asFile().asLink("📄")`;
+	const wanted = `value.asFile() && ["pdf", "epub"].contains(value.asFile().ext.lower())`;
+	assert.equal(missingFileFilter(["pdf", "attachments"], ["pdf", "epub"]), `!(${holds("pdf", wanted)} || ${holds("attachments", wanted)})`);
+	assert.equal(missingFileFilter(["attachments"], []), `!(${holds("attachments", "value.asFile()")})`);
 	const pdf = `value.asFile() && value.asFile().ext.lower() == "pdf"`;
 	const epub = `value.asFile() && value.asFile().ext.lower() == "epub"`;
+	const any = "value.asFile()";
+	const step = (p: string, cond: string, rest: string) => `if(${holds(p, cond)}, ${pick(p, cond)}, ${rest})`;
+	// For each format: the old property, then attachments. Then any file, in the same order.
 	assert.equal(
-		mainFileFormula("attachments", ["pdf", "epub"]),
-		`if(note["attachments"].isEmpty(), "", if(${pick(pdf)}, if(${pick(epub)}, if(${pick("value.asFile()")}, ""))))`
+		mainFileFormula(["pdf", "attachments"], ["pdf", "epub"]),
+		step("pdf", pdf, step("attachments", pdf, step("pdf", epub, step("attachments", epub, step("pdf", any, step("attachments", any, `""`))))))
 	);
+	// The same property twice is read once.
+	assert.equal(mainFileFormula(["attachments", "attachments"], []), step("attachments", any, `""`));
 	// A property name with quotes stays one string literal.
-	assert.match(missingFileFilter('my "files"', ["pdf"]), /^note\["my \\"files\\""\]\.isEmpty\(\)/);
+	assert.match(missingFileFilter(['my "files"'], ["pdf"]), /^!\(if\(note\["my \\"files\\""\]\.isEmpty\(\)/);
 });
 
 test("a status with quotes is a valid expression literal", () => {
