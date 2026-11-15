@@ -6,7 +6,7 @@
 import { Menu, Notice, TAbstractFile, TFile, TFolder, normalizePath, requireApiVersion, stringifyYaml } from "obsidian";
 import { BatchAction } from "./batch";
 import { BatchActions, BatchScope } from "./batchActions";
-import { starterBase } from "./bases";
+import { freeBasePath, starterBase } from "./bases";
 import type LibraryPlugin from "./main";
 import { Fetcher } from "./metadata/http";
 import { BATCH_VIEW_TYPE, batchViewFactory } from "./ui/BatchBaseView";
@@ -45,7 +45,7 @@ export function registerBatchCommands(plugin: LibraryPlugin, fetcher: Fetcher, s
 			open(scopes, collection);
 		},
 	});
-	plugin.addCommand({ id: "create-library-base", name: "Create library base", callback: () => void createLibraryBase(plugin) });
+	plugin.addCommand({ id: "create-library-base", name: "Create base", callback: () => void createLibraryBase(plugin) });
 
 	// Notes selected in the file explorer, and folders.
 	plugin.registerEvent(
@@ -83,8 +83,7 @@ export function registerBatchCommands(plugin: LibraryPlugin, fetcher: Fetcher, s
 export async function createLibraryBase(plugin: LibraryPlugin): Promise<TFile | null> {
 	const { app } = plugin;
 	const s = plugin.settings;
-	let path = "Library.base";
-	for (let i = 1; app.vault.getAbstractFileByPath(path); i++) path = `Library ${i}.base`;
+	const path = freeBasePath((p) => !!app.vault.getAbstractFileByPath(p));
 	let file: TFile;
 	try {
 		file = await app.vault.create(path, stringifyYaml(starterBase(s.referencesFolder, s.propertyNames, s.statuses, s.preferredFormats, s.legacyPdfProperty)));

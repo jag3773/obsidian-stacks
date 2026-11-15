@@ -80,20 +80,20 @@ describe("Library base in Bases", function () {
 	it("is created next to an existing base without overwriting anything, and becomes the library base", async function () {
 		const existing = await read("Reading list.base");
 		await runCommand("create-library-base");
-		await waitForNotice("Stacks: created Library.base.");
-		await waitForFiles("", (p) => p.includes("Library.base"), "no Library.base");
+		await waitForNotice("Stacks: created Stacks.base.");
+		await waitForFiles("", (p) => p.includes("Stacks.base"), "no Stacks.base");
 		expect(await read("Reading list.base")).toBe(existing);
-		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Library.base");
+		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Stacks.base");
 
 		// A second run picks a free name.
 		await runCommand("create-library-base");
-		await waitForNotice("Stacks: created Library 1.base.");
-		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Library.base");
+		await waitForNotice("Stacks: created Stacks 1.base.");
+		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Stacks.base");
 	});
 
 	it("evaluates every view, including Unfiled and Missing file, without errors", async function () {
 		await runCommand("create-library-base");
-		await waitForFiles("", (p) => p.includes("Library.base"), "no Library.base");
+		await waitForFiles("", (p) => p.includes("Stacks.base"), "no Stacks.base");
 
 		const all = [
 			"References/dijkstraGoToStatement1968.md",
@@ -139,7 +139,7 @@ describe("Library base in Bases", function () {
 			await Promise.all(all.map(async (p) => [p, String((await frontmatter(p))?.title)] as const))
 		);
 		for (const [view, files] of Object.entries(expected)) {
-			const r = await openView("Library.base", view);
+			const r = await openView("Stacks.base", view);
 			expect({ view, error: r.error, errorText: r.errorText }).toEqual({ view, error: null, errorText: "" });
 			expect({ view, files: r.files }).toEqual({ view, files });
 			expect({ view, count: r.count }).toEqual({ view, count: `${files.length} ${files.length === 1 ? "result" : "results"}` });
@@ -151,8 +151,8 @@ describe("Library base in Bases", function () {
 
 	it("links each reference's main file in the File column", async function () {
 		await runCommand("create-library-base");
-		await waitForFiles("", (p) => p.includes("Library.base"), "no Library.base");
-		await openView("Library.base", "Library");
+		await waitForFiles("", (p) => p.includes("Stacks.base"), "no Stacks.base");
+		await openView("Stacks.base", "Library");
 		const links = await browser.executeObsidian(({ app }) => {
 			const el = (app.workspace.getMostRecentLeaf()!.view as any).containerEl as HTMLElement;
 			const out: Record<string, string> = {};

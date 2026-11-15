@@ -1,5 +1,5 @@
 import { App, Platform, PluginSettingTab, Setting, TFile, normalizePath, parseYaml, stringifyYaml } from "obsidian";
-import { BaseConfig, baseDisplayNames, baseFolder, basePropertyNames, matchProperties, starterBase, validateBase } from "./bases";
+import { BaseConfig, DEFAULT_BASE_NAME, baseDisplayNames, baseFolder, basePropertyNames, freeBasePath, matchProperties, starterBase, validateBase } from "./bases";
 import { BibFormat, FORMAT_EXTENSIONS, FORMAT_LABELS, parseFilter } from "./bibliography";
 import { parsePattern } from "./citekey";
 import { CITE_FORMAT_LABELS, CiteFormat } from "./cite";
@@ -274,8 +274,7 @@ export class LibrarySettingTab extends PluginSettingTab {
 
 	private async createBase(): Promise<void> {
 		const s = this.plugin.settings;
-		let path = "Library.base";
-		for (let i = 1; this.app.vault.getAbstractFileByPath(path); i++) path = `Library ${i}.base`;
+		const path = freeBasePath((p) => !!this.app.vault.getAbstractFileByPath(p));
 		await this.app.vault.create(path, stringifyYaml(starterBase(s.referencesFolder, s.propertyNames, s.statuses, s.preferredFormats, s.legacyPdfProperty)));
 		await this.useBase(path, true);
 	}
@@ -515,7 +514,7 @@ export class LibrarySettingTab extends PluginSettingTab {
 	/** The library base and the field mapping it drives. */
 	private displayBase(containerEl: HTMLElement): void {
 		const s = this.plugin.settings;
-		new Setting(containerEl).setName("Library base").setHeading();
+		new Setting(containerEl).setName("Base").setHeading();
 		const hasBase = !!this.baseFile(s.libraryBase);
 		new Setting(containerEl)
 			.setName("Base")
@@ -526,7 +525,7 @@ export class LibrarySettingTab extends PluginSettingTab {
 			)
 			.addSearch((t) => {
 				new PathSuggest(this.app, t.inputEl, () => filePaths(this.app, ["base"]));
-				t.setPlaceholder("Library.base")
+				t.setPlaceholder(`${DEFAULT_BASE_NAME}.base`)
 					.setValue(s.libraryBase)
 					.onChange(async (v) => {
 						const value = v.trim();

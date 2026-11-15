@@ -94,11 +94,11 @@ test("a missing or broken base reports an error and changes nothing", async () =
 
 test("Create base writes a starter base over the references folder and adopts it", async () => {
 	const { app, plugin, tab } = await setup();
-	app.vault.addFile("Library.base", "views: []");
+	app.vault.addFile("Stacks.base", "views: []");
 	plugin.settings.referencesFolder = "Sources";
 	await (tab as any).createBase();
-	assert.equal(plugin.settings.libraryBase, "Library 1.base");
-	const created = app.vault.getAbstractFileByPath("Library 1.base");
+	assert.equal(plugin.settings.libraryBase, "Stacks 1.base");
+	const created = app.vault.getAbstractFileByPath("Stacks 1.base");
 	assert.ok(created);
 	assert.match(await app.vault.read(created as any), /file\.inFolder\("Sources"\)/);
 	assert.equal(plugin.settings.referencesFolder, "Sources");
