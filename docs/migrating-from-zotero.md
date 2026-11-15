@@ -55,7 +55,7 @@ Settle these before converting anything, because every later step depends on the
    | `tags` | `[Fiction]` | Broad categories only |
    | `status` | `queued` | See below |
    | `owned` | `true` | Optional, for books you own in print |
-   | `pdf`, `attachments` | `"[[doeExampleBook2006.pdf]]"` | Links, so they open from the note and the Base |
+   | `attachments` | `["[[doeExampleBook2006.pdf]]"]` | Links, so they open from the note and the Base. The [main file](attachments.md) is the one in your most preferred format |
    | `highlights`, `last_highlighted` | `42`, `2024-03-24` | Counted from existing annotations |
    | `added` | `2022-12-14` | Zotero's date added |
 
@@ -93,23 +93,23 @@ filters:
     - file.hasProperty("citekey")
 formulas:
   name: file.asLink(title)
-  pdf_icon: 'if(pdf, link(pdf.toString().replace("[[", "").replace("]]", ""), "📄"), "")'
+  file_icon: 'if(attachments.isEmpty(), "", list(attachments).filter(value.asFile())[0].asFile().asLink("📄"))'
 properties:
   formula.name:
     displayName: Title
-  formula.pdf_icon:
-    displayName: PDF
+  formula.file_icon:
+    displayName: File
 views:
   - type: table
     name: Library
     groupBy:
       property: status
       direction: ASC
-    order: [formula.name, authors, year, collections, highlights, formula.pdf_icon]
+    order: [formula.name, authors, year, collections, highlights, formula.file_icon]
   - type: table
     name: Queue
     filters: 'status == "queued"'
-    order: [formula.name, authors, year, formula.pdf_icon, added]
+    order: [formula.name, authors, year, formula.file_icon, added]
     sort:
       - property: added
         direction: ASC
@@ -126,7 +126,7 @@ views:
 Three details matter here:
 
 - **Clickable titles.** A plain `title` property isn't a link in a Base. The `name` formula (`file.asLink(title)`) shows the title and opens the note.
-- **Clickable PDFs.** The `pdf_icon` formula turns the `pdf` property into a link that opens the PDF.
+- **Clickable files.** The `file_icon` formula links the first attachment that exists, so it opens from the table. **Stacks: Create base** writes a column that picks the file in your most preferred format instead.
 - **No backlink counts.** Avoid `file.backlinks` in a library view. Obsidian marks it as [performance heavy](https://obsidian.md/help/bases/syntax), and a base that counts backlinks for thousands of references can take a long time to open. Sorting or filtering by it needs the count for every row too. To see what links to one reference, use the backlinks pane on its note.
 
 Live with the sample for a few days. This is where you find out which statuses, collections and views you actually want.

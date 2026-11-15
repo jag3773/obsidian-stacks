@@ -143,7 +143,7 @@ test("Find PDF: confirms the source, saves under the attachment name, and links 
 	await flush();
 	assert.equal(asked.length, 1, "the person was asked before downloading");
 	assert.equal(file?.path, "References/attachments/lovelace2020.pdf");
-	assert.equal(fm(app, note).pdf, "[[lovelace2020.pdf]]");
+	assert.equal(fm(app, note).pdf, undefined);
 	assert.deepEqual(fm(app, note).attachments, ["[[lovelace2020.pdf]]"]);
 	assert.match(await app.vault.read(note), /My notes\.\n$/, "the body is untouched");
 	assert.ok(Notice.messages.some((m) => /saved lovelace2020\.pdf from Unpaywall: repository, accepted manuscript/.test(m)));
@@ -164,6 +164,21 @@ test("Find PDF refuses a note that already has a PDF, without any request", asyn
 	assert.equal(await fullText.find(note), null);
 	assert.deepEqual(fetch.calls, []);
 	assert.ok(Notice.messages.some((m) => m.includes("already has a PDF")));
+});
+
+test("Find PDF refuses a note with a PDF in its attachments, but not one with only an ebook", async () => {
+	const { app, fullText, fetch } = setup({}, openAccess);
+	const withPdf = app.vault.addFile("References/n.md", `---\n{"citekey":"n","doi":"10.1038/nature12373","attachments":["[[n.epub]]","[[Mine.PDF|scan]]"]}\n---\n`);
+	assert.equal(await fullText.find(withPdf), null);
+	assert.deepEqual(fetch.calls, []);
+	assert.ok(Notice.messages.some((m) => m.includes("already has a PDF ([[Mine.PDF|scan]]). Remove it from attachments first")));
+
+	const ebookOnly = app.vault.addFile("References/lovelace2020.md", `---\n{"citekey":"lovelace2020","doi":"10.1038/nature12373","attachments":["[[lovelace2020.epub]]"]}\n---\n`);
+	const file = await fullText.find(ebookOnly);
+	await flush();
+	assert.equal(file?.path, "References/attachments/lovelace2020.pdf");
+	// The note had no PDF, so the found one goes first; the ebook stays listed.
+	assert.deepEqual(fm(app, ebookOnly).attachments, ["[[lovelace2020.pdf]]", "[[lovelace2020.epub]]"]);
 });
 
 test("Find PDF saves nothing when the person cancels, or the download is a sign-in page", async () => {

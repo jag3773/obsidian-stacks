@@ -8,6 +8,7 @@
  * records each field there), then exact names, then common synonyms.
  */
 
+import { DEFAULT_FORMATS } from "./attachments";
 import { DEFAULT_PROPERTY_NAMES, FIELD_LABELS, PROPERTY_KEYS, PropertyKey } from "./properties";
 
 /** A parsed .base file, after validateBase() has accepted its shape. */
@@ -249,7 +250,6 @@ export const SYNONYMS: Record<PropertyKey, string[]> = {
 	abstract: ["description", "abstractNote", "summary", "synopsis"],
 	collections: ["collection", "topics"],
 	status: ["state", "reading", "readingStatus"],
-	pdf: ["file", "pdfFile"],
 	attachments: ["files", "attachment"],
 	added: ["created", "dateAdded", "date-added", "added_on"],
 	zotero: ["zoteroLink", "zoteroKey", "select"],
@@ -304,6 +304,48 @@ export function freeBasePath(exists: (path: string) => boolean, name = DEFAULT_B
 	return path;
 }
 
+/*
+ * Attachment formulas. Checked in Obsidian 1.10.3 and 1.15.1: list() wraps a single value
+ * (and gives [] for a missing property), filter() binds `value`, [0] indexes, asFile() is
+ * null for a link that doesn't resolve, and if() evaluates only the branch it takes. Each
+ * property is checked for isEmpty() first because an empty string becomes [""], and
+ * asFile() on a string is an error.
+ *
+ * `sources` are the properties holding a note's files, in the order Library.attachmentValues
+ * reads them: the property earlier versions kept the PDF in, then attachments.
+ */
+const resolves = "value.asFile()";
+const hasFormat = (f: string) => `${resolves} && ${resolves}.ext.lower() == ${lit(f)}`;
+const listOf = (p: string) => `list(note[${lit(p)}])`;
+/** True when the property holds a file meeting `cond`. */
+const holds = (p: string, cond: string) => `if(note[${lit(p)}].isEmpty(), false, ${listOf(p)}.filter(${cond}).length > 0)`;
+const unique = (sources: string[]) => sources.filter((p, i) => p && sources.indexOf(p) === i);
+
+/**
+ * A Bases filter: true when no file in `sources` resolves to one of the formats (to any file,
+ * when no formats are set). The same rule as Library.mainAttachment, minus the fallback to
+ * other formats.
+ */
+export function missingFileFilter(sources: string[], formats: string[]): string {
+	const wanted = formats.length ? `${resolves} && [${formats.map(lit).join(", ")}].contains(${resolves}.ext.lower())` : resolves;
+	return `!(${unique(sources).map((p) => holds(p, wanted)).join(" || ")})`;
+}
+
+/**
+ * A Bases formula: a link (shown as an icon) to the main file. For each preferred format in
+ * turn, the first such file in `sources`, in their order; else the first file that resolves.
+ * Library.mainAttachment is the same rule.
+ */
+export function mainFileFormula(sources: string[], formats: string[], icon = "📄"): string {
+	const props = unique(sources);
+	const pick = (p: string, cond: string) => `${listOf(p)}.filter(${cond})[0].asFile().asLink(${lit(icon)})`;
+	let expr = `""`;
+	for (const p of [...props].reverse()) expr = `if(${holds(p, resolves)}, ${pick(p, resolves)}, ${expr})`;
+	for (const f of [...formats].reverse())
+		for (const p of [...props].reverse()) expr = `if(${holds(p, hasFormat(f))}, ${pick(p, hasFormat(f))}, ${expr})`;
+	return expr;
+}
+
 /**
  * A starter library base over `folder`, as an object for a YAML serializer (so every
  * expression and property id is quoted correctly at the YAML layer). Every field is listed
@@ -312,28 +354,35 @@ export function freeBasePath(exists: (path: string) => boolean, name = DEFAULT_B
  *
  * Views: the whole library grouped by status, one view per status in reading order (the
  * reading workflow: queued, reading, reviewing, processed, shelved by default), references
- * in no collection ("Unfiled"), and references without a PDF.
+ * in no collection ("Unfiled"), and references with no file in a preferred format.
  */
-export function starterBase(folder: string, p: Record<PropertyKey, string>, statuses: string[] = ["queued"]): Record<string, unknown> {
+export function starterBase(
+	folder: string,
+	p: Record<PropertyKey, string>,
+	statuses: string[] = ["queued"],
+	formats: string[] = DEFAULT_FORMATS,
+	legacyPdfProperty = "pdf"
+): Record<string, unknown> {
+	const sources = [legacyPdfProperty, p.attachments];
 	const id = (k: PropertyKey) => `note.${p[k]}`;
-	const properties: Record<string, unknown> = { "formula.name": { displayName: "Title" } };
+	const properties: Record<string, unknown> = { "formula.name": { displayName: "Title" }, "formula.file": { displayName: "File" } };
 	for (const k of PROPERTY_KEYS) properties[id(k)] = { displayName: FIELD_LABELS[k] };
 	const columns = ["formula.name", id("authors"), id("year"), id("added")];
 	const statusViews = [...new Set(statuses.map((s) => s.trim()).filter(Boolean))].map((s) => ({ type: "table", name: viewName(s), filters: `note[${lit(p.status)}] == ${lit(s)}`, order: columns }));
 	return {
 		filters: { and: [`file.inFolder(${lit(folder)})`, `file.hasProperty(${lit(p.citekey)})`] },
-		formulas: { name: `file.asLink(note[${lit(p.title)}])` },
+		formulas: { name: `file.asLink(note[${lit(p.title)}])`, file: mainFileFormula(sources, formats) },
 		properties,
 		views: [
 			{
 				type: "table",
 				name: "Library",
 				groupBy: { property: id("status"), direction: "ASC" },
-				order: ["formula.name", id("authors"), id("year"), id("type"), id("citekey"), id("collections")],
+				order: ["formula.name", "formula.file", id("authors"), id("year"), id("type"), id("citekey"), id("collections")],
 			},
 			...statusViews,
 			{ type: "table", name: "Unfiled", filters: `note[${lit(p.collections)}].isEmpty()`, order: [...columns, id("status")] },
-			{ type: "table", name: "Missing PDF", filters: `note[${lit(p.pdf)}].isEmpty()`, order: [...columns, id("status")] },
+			{ type: "table", name: "Missing file", filters: missingFileFilter(sources, formats), order: [...columns, id("status")] },
 		],
 	};
 }

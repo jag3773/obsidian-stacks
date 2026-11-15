@@ -10,9 +10,9 @@
    - **The landing page**: the DOI's page (through doi.org), or, for a note without a DOI, the page in its `url` property. Many publishers, repositories and arXiv name their PDF in a `citation_pdf_url` tag.
 3. A dialog lists every copy found, with its source and, for Unpaywall, where it is hosted (publisher or repository), which version it is (published version, accepted manuscript, or submitted manuscript), and its license. Nothing is downloaded until you choose one.
 4. Stacks downloads the copy you chose and checks that it really is a PDF: the server must not call it a web page or other text, and the file must start with the PDF signature (`%PDF-`). Sign-in pages, bot checks and error pages are rejected, and nothing is saved.
-5. The PDF is saved in your attachments folder under the **Attachment filename format**, and linked from the note's `pdf` and `attachments` properties, exactly as a PDF filed from the inbox. An existing file is never replaced: if the name is taken, the new file gets a number (`citekey 1.pdf`).
+5. The PDF is saved in your attachments folder under the **Attachment filename format**, and linked in the note's `attachments`, exactly as a PDF filed from the inbox. It goes first in the list unless the note already had a PDF (see [files and the main file](attachments.md)). An existing file is never replaced: if the name is taken, the new file gets a number (`citekey 1.pdf`).
 
-A note that already has a `pdf` is left alone; remove the property first if you want another copy. If you attach a PDF while the download runs, the download is discarded.
+A note that already has a PDF in `attachments` is left alone; remove it from the list first if you want another copy. A note with only an ebook or other files can still look for a PDF. If you attach a PDF while the download runs, the download is discarded.
 
 ## Limits
 
@@ -21,7 +21,7 @@ A note that already has a `pdf` is left alone; remove the property first if you 
 - Some publishers serve the PDF only to browsers, or only after a cookie check. Those downloads are rejected as "not a PDF". Download the file in your browser instead.
 - Unpaywall's data is a snapshot; a listed copy can move or disappear.
 
-You can always attach your own copy: drop the PDF into your inbox (it is matched by its DOI or ISBN), or link it in the note's `pdf` property.
+You can always attach your own copy: drop the PDF into your inbox (it is matched by its DOI or ISBN), or add a link to it in the note's `attachments`.
 
 ## Privacy
 

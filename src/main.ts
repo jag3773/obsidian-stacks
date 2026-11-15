@@ -713,7 +713,7 @@ export default class LibraryPlugin extends Plugin {
 	async extractNow(note: TFile): Promise<void> {
 		await this.guard(note, async () => {
 			const pdf = this.extractor.pdfFor(note);
-			if (!pdf) throw new Error(`${note.basename} has no PDF linked in its ${this.library.prop("pdf")} property.`);
+			if (!pdf) throw new Error(`${note.basename} has no PDF in its ${this.library.prop("attachments")} property.`);
 			const pending = new Notice(`${PREFIX}: extracting annotations from ${pdf.name}…`, 0);
 			try {
 				let bytes: ArrayBuffer | undefined;

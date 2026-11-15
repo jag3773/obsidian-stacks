@@ -19,6 +19,7 @@
  * - For a whole Zotero library, group-library notes aren't in a personal export: they're
  *   reported, not guessed at, and notes whose item is gone are listed.
  */
+import { DEFAULT_FORMATS, byPreference } from "../attachments";
 import { disambiguate, familyFromFullName, generateCitekey } from "../citekey";
 import { canonicalIsbn, normalizeDoi } from "../identifiers";
 import { ReferenceData, yearFrom } from "../metadata/types";
@@ -73,6 +74,8 @@ export interface ImportOptions {
 	parseYaml: (text: string) => unknown;
 	/** Pattern for citekeys of new notes whose record has none. Default: the plugin's default pattern. */
 	citekeyPattern?: string;
+	/** File extensions in order of preference; a record's attachments are listed in this order. Default: pdf, epub. */
+	preferredFormats?: string[];
 }
 
 /** Where the records came from. */
@@ -96,7 +99,7 @@ export interface Extras {
 	tags: string[];
 	/** Properties from tag rules, keyed by property name. */
 	tagProperties: Record<string, unknown>;
-	/** Vault paths of the record's attachments that are in the vault, PDFs first. */
+	/** Vault paths of the record's attachments that are in the vault, preferred formats first. */
 	attachments: string[];
 	added?: string;
 	/** zotero://select link, when the record came from Zotero. */
@@ -443,14 +446,13 @@ export function planRecords(records: ImportRecord[], notes: VaultNote[], o: Impo
 			} else if (/[\\/]storage[\\/][A-Z0-9]{8}[\\/][^\\/]+\.html?$/i.test(path)) report.snapshotsLeftInZotero++;
 			else report.attachmentsNotInVault.push({ citekey, path });
 		}
-		attachments.sort((a, b) => Number(!/\.pdf$/i.test(a)) - Number(!/\.pdf$/i.test(b)));
 		return {
 			citekey,
 			status,
 			collections,
 			tags,
 			tagProperties: tagProps,
-			attachments,
+			attachments: byPreference(attachments, o.preferredFormats ?? DEFAULT_FORMATS),
 			added: r.added,
 			zotero: r.zoteroKey ? `zotero://select/${r.zoteroLibrary ?? "library"}/items/${r.zoteroKey}` : undefined,
 			notes: r.notes.filter((t) => t.trim()),

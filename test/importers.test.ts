@@ -414,7 +414,8 @@ test("a BibTeX import creates notes, links vault attachments, lists outside ones
 	assert.equal(doe.owned, true, "tag rules apply");
 	assert.deepEqual(doe.tags, ["climate"]);
 	assert.equal(doe.status, "queued");
-	assert.equal(doe.pdf, "[[doe2020.pdf]]", "a relative path resolved from the .bib file's folder");
+	assert.deepEqual(doe.attachments, ["[[doe2020.pdf]]"], "a relative path resolved from the .bib file's folder");
+	assert.equal(doe.pdf, undefined, "files go in attachments only");
 	assert.equal(doe.zotero, undefined);
 	const poe = fm(app, "References/My Poe Book.md");
 	// Without "Rename notes to current citekeys", the filename stays the citekey and the report lists the file's key.

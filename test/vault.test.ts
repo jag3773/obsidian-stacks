@@ -298,9 +298,9 @@ test("#7 attachment links include the path when the basename isn't unique", asyn
 	await flush();
 	const props = fm(app, note);
 	assert.equal(file.path, "References/attachments/key.pdf");
-	assert.equal(props.pdf, "[[References/attachments/key.pdf]]");
+	assert.equal(props.pdf, undefined);
 	assert.deepEqual(props.attachments, ["[[References/attachments/key.pdf]]"]);
-	const target = (props.pdf as string).slice(2, -2);
+	const target = (props.attachments as string[])[0].slice(2, -2);
 	assert.equal(app.metadataCache.getFirstLinkpathDest(target, note.path), file);
 	assert.notEqual(app.metadataCache.getFirstLinkpathDest(target, note.path), unrelated);
 });
@@ -311,7 +311,66 @@ test("#7 control: a unique basename keeps a short link", async () => {
 	const file = app.vault.addFile("Inbox/new.pdf", "%PDF\nstartxref\n0\n%%EOF");
 	await library.exclusive(() => library.attach(note, file));
 	await flush();
-	assert.equal(fm(app, note).pdf, "[[key.pdf]]");
+	assert.deepEqual(fm(app, note).attachments, ["[[key.pdf]]"]);
+});
+
+// ---------------------------------------------------------------- main file
+
+test("the main file is the attachment in the most preferred format, whatever its name or place in the list", async () => {
+	const { app, library, settings } = setup();
+	for (const name of ["extra.zip", "Book.EPUB", "scan.pdf", "other.pdf"]) app.vault.addFile(`References/attachments/${name}`, "x");
+	const note = app.vault.addFile("References/k.md", `---\n{"citekey":"k","attachments":["[[extra.zip]]","[[missing.pdf]]","[[Book.EPUB|Ebook]]","[[scan.pdf#page=2]]","[[other.pdf]]"]}\n---\n`);
+	assert.deepEqual(library.attachmentFiles(note).map((f) => f.name), ["extra.zip", "Book.EPUB", "scan.pdf", "other.pdf"], "broken links skipped");
+	assert.equal(library.mainAttachment(note)?.name, "scan.pdf", "pdf first by default, then list order");
+	assert.equal(library.pdfOf(note)?.name, "scan.pdf");
+	settings.preferredFormats = ["epub", "pdf"];
+	assert.equal(library.mainAttachment(note)?.name, "Book.EPUB", "an ebook library's main file; case doesn't matter");
+	assert.equal(library.pdfOf(note)?.name, "scan.pdf", "PDF features still find the PDF");
+	settings.preferredFormats = ["docx"];
+	assert.equal(library.mainAttachment(note)?.name, "extra.zip", "no preferred format attached: the first file");
+});
+
+test("a note's old pdf property is read as its first attachment, never written", async () => {
+	const { app, library } = setup();
+	app.vault.addFile("References/attachments/old.pdf", "x");
+	app.vault.addFile("References/attachments/new.pdf", "x");
+	const note = app.vault.addFile("References/k.md", `---\n{"citekey":"k","pdf":"[[old.pdf]]","attachments":["[[new.pdf]]","[[old.pdf]]"]}\n---\n`);
+	assert.deepEqual(library.attachmentValues(note), ["[[old.pdf]]", "[[new.pdf]]"], "it was the note's PDF, so it still comes first, once");
+	assert.equal(library.pdfOf(note)?.name, "old.pdf");
+	const only = app.vault.addFile("References/j.md", `---\n{"citekey":"j","pdf":"[[old.pdf]]","attachments":["[[new.pdf]]"]}\n---\n`);
+	assert.deepEqual(library.attachmentValues(only), ["[[old.pdf]]", "[[new.pdf]]"]);
+	assert.equal(library.pdfOf(only)?.name, "old.pdf");
+	// Linking another file leaves the old property alone, and a PDF isn't put before it.
+	const extra = app.vault.addFile("Inbox/x.pdf", "x");
+	await library.exclusive(() => library.linkAttachment(only, extra, true));
+	await flush();
+	assert.equal(fm(app, only).pdf, "[[old.pdf]]");
+	assert.deepEqual(fm(app, only).attachments, ["[[new.pdf]]", "[[x.pdf]]"]);
+});
+
+test("a settings file from before keeps reading the property its pdf field was mapped to", () => {
+	const s = withDefaults({ propertyNames: { pdf: "scan", title: "name" } } as unknown as Partial<LibrarySettings>);
+	assert.equal(s.legacyPdfProperty, "scan");
+	assert.equal((s.propertyNames as Record<string, string>).pdf, undefined);
+	assert.equal(s.propertyNames.title, "name");
+	assert.equal(withDefaults({}).legacyPdfProperty, "pdf");
+	assert.deepEqual(withDefaults({}).preferredFormats, ["pdf", "epub"]);
+	assert.deepEqual(withDefaults({ preferredFormats: [".EPUB", "pdf", "epub", 3] } as unknown as Partial<LibrarySettings>).preferredFormats, ["epub", "pdf"]);
+});
+
+test("a filed file goes first only when the note has no file in its format", async () => {
+	const { app, library } = setup();
+	app.vault.addFile("References/attachments/k.epub", "x");
+	app.vault.addFile("References/attachments/k-extras.pdf", "x");
+	const note = app.vault.addFile("References/k.md", `---\n{"citekey":"k","attachments":["[[k.epub]]"]}\n---\n`);
+	const pdf = app.vault.addFile("Inbox/a.pdf", "x");
+	await library.exclusive(() => library.linkAttachment(note, pdf, true));
+	await flush();
+	assert.deepEqual(fm(app, note).attachments, ["[[a.pdf]]", "[[k.epub]]"]);
+	const second = app.vault.addFile("Inbox/b.pdf", "x");
+	await library.exclusive(() => library.linkAttachment(note, second, true));
+	await flush();
+	assert.deepEqual(fm(app, note).attachments, ["[[a.pdf]]", "[[k.epub]]", "[[b.pdf]]"], "a second PDF goes last");
 });
 
 // ---------------------------------------------------------------- #9

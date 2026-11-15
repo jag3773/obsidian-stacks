@@ -12,7 +12,7 @@ const PREFIX = "Stacks";
 /** Command names, also quoted in the health report. */
 export const MAINTENANCE_COMMANDS = {
 	check: "Check library health",
-	relink: "Relink PDFs named after citekeys",
+	relink: "Repair attachment links",
 	review: "Review duplicate references",
 	mergeCurrent: "Merge duplicates of current reference",
 };
@@ -23,7 +23,7 @@ function report(e: unknown): void {
 	new Notice(`${PREFIX}: ${e instanceof Error ? e.message : String(e)}`);
 }
 
-/** The health check, PDF relinking and duplicate merging commands (#26, #28). */
+/** The health check, attachment repairs and duplicate merging commands (#26, #28). */
 export function registerMaintenanceCommands(plugin: LibraryPlugin): Maintenance {
 	const { app } = plugin;
 	const maintenance = new Maintenance(app, plugin.library, () => plugin.settings);
@@ -37,7 +37,7 @@ export function registerMaintenanceCommands(plugin: LibraryPlugin): Maintenance 
 			await app.workspace.getLeaf(false).openFile(file);
 			const n = problemCount(r);
 			new Notice(
-				`${PREFIX}: ${n ? `${n} ${n === 1 ? "problem" : "problems"} in ${r.checked} notes` : `no problems in ${r.checked} notes`}.${r.repairs.length ? ` ${r.repairs.length} PDF ${r.repairs.length === 1 ? "link" : "links"} can be repaired.` : ""}`
+				`${PREFIX}: ${n ? `${n} ${n === 1 ? "problem" : "problems"} in ${r.checked} notes` : `no problems in ${r.checked} notes`}.${r.repairs.length ? ` ${r.repairs.length} ${r.repairs.length === 1 ? "note's attachments" : "notes' attachments"} can be repaired.` : ""}`
 			);
 		} catch (e) {
 			report(e);
@@ -50,15 +50,15 @@ export function registerMaintenanceCommands(plugin: LibraryPlugin): Maintenance 
 		try {
 			const { repairs } = await maintenance.check();
 			if (!repairs.length) {
-				new Notice(`${PREFIX}: no PDF links to repair.`);
+				new Notice(`${PREFIX}: no attachment links to repair.`);
 				return;
 			}
-			new RepairModal(app, repairs, plugin.library.prop("pdf"), (chosen) =>
+			new RepairModal(app, repairs, plugin.library.prop("attachments"), plugin.settings.legacyPdfProperty, (chosen) =>
 				void (async () => {
 					let done = 0;
 					for (const r of chosen) if (await maintenance.applyRepair(r)) done++;
 					const skipped = chosen.length - done;
-					new Notice(`${PREFIX}: relinked ${done} ${done === 1 ? "PDF" : "PDFs"}.${skipped ? ` ${skipped} skipped because the note changed.` : ""}`);
+					new Notice(`${PREFIX}: repaired ${done} ${done === 1 ? "note" : "notes"}.${skipped ? ` ${skipped} skipped because the note changed.` : ""}`);
 				})().catch(report)
 			).open();
 		} catch (e) {

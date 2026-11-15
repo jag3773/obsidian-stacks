@@ -222,7 +222,8 @@ test("import: properties added, bodies byte-for-byte unchanged, renames and crea
 	assert.equal(doe.owned, true);
 	assert.equal(doe.status, "reviewing");
 	assert.deepEqual(doe.collections, ["[[Climate]]"]);
-	assert.equal(doe.pdf, "[[doeExampleBook2006.pdf]]");
+	assert.equal((doe.attachments as string[])[0], "[[doeExampleBook2006.pdf]]");
+	assert.equal(doe.pdf, undefined);
 	assert.equal(doe.added, "2022-12-14");
 	assert.equal(doe.published, "2006-03");
 	assert.equal(doe.zotero, "zotero://select/library/items/AAAAAAA1");

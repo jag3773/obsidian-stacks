@@ -119,6 +119,7 @@ export abstract class ReferenceImporter {
 			findAttachment: (path) => this.findAttachment(path, base),
 			parseYaml: (t): unknown => parseYaml(t),
 			citekeyPattern: s.citekeyPattern,
+			preferredFormats: s.preferredFormats,
 		};
 	}
 
@@ -133,13 +134,11 @@ export abstract class ReferenceImporter {
 			const f = this.app.vault.getAbstractFileByPath(path);
 			return `[[${f instanceof TFile ? this.app.metadataCache.fileToLinktext(f, "", false) : path}]]`;
 		};
-		const pdf = extras.attachments.find((a) => /\.pdf$/i.test(a));
 		const workflow: Frontmatter = {
 			[p("collections")]: extras.collections.length ? extras.collections.map((c) => `[[${c}]]`) : undefined,
 			tags: extras.tags.length ? extras.tags : undefined,
 			[p("status")]: extras.status,
 			...extras.tagProperties,
-			[p("pdf")]: pdf ? link(pdf) : undefined,
 			[p("attachments")]: extras.attachments.length ? extras.attachments.map(link) : undefined,
 			[p("added")]: extras.added,
 			[p("zotero")]: extras.zotero,

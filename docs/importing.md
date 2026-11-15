@@ -32,7 +32,7 @@ That is why importing the same file twice, a newer export of it, or the rest of 
 
 ### Attachments
 
-Stacks never copies or moves files from outside your vault. A BibTeX `file` (or BibDesk `pdf`) field and RIS `L1`, `L2` and `L4` links are looked up in the vault: first as a path relative to the imported file's folder (never leaving the vault), then by filename. Found files are linked in `pdf` and `attachments`; the rest are listed in the report under **Attachments outside the vault**. Move them into the vault and import again to link them.
+Stacks never copies or moves files from outside your vault. A BibTeX `file` (or BibDesk `pdf`) field and RIS `L1`, `L2` and `L4` links are looked up in the vault: first as a path relative to the imported file's folder (never leaving the vault), then by filename. Found files are linked in `attachments`, your **Preferred formats** first; the rest are listed in the report under **Attachments outside the vault**. Move them into the vault and import again to link them.
 
 ## Supported constructs
 
@@ -84,7 +84,7 @@ Names: `family`, `given`, `non-dropping-particle` and `dropping-particle` (the p
 | `abstract` | `abstract` |
 | `keywords` (comma- or semicolon-separated) | `tags` |
 | `groups` (JabRef) | `collections` |
-| `file` (JabRef, Zotero, Mendeley forms), `pdf` | `pdf`, `attachments` (see above) |
+| `file` (JabRef, Zotero, Mendeley forms), `pdf` | `attachments` (see above) |
 | `note`, `annote`, `annotation` | notes in a new note's body |
 | `timestamp`, `creationdate`, `date-added` | `added` |
 
@@ -118,7 +118,7 @@ Tagged lines from EndNote, Mendeley, Zotero and database exports: `TY  - ` start
 | `DO`, `UR` | `doi`, `url` |
 | `LA`, `AB` (or `N2`) | `language`, `abstract` |
 | `KW` | `tags` |
-| `L1`, `L4`, and `L2` when it isn't a web address | `pdf`, `attachments` (see above) |
+| `L1`, `L4`, and `L2` when it isn't a web address | `attachments` (see above) |
 | `N1` | notes in a new note's body |
 
 Names are read as `Last, First` (or `Last, First, Suffix`); a name without a comma is split by [the usual rules](citation-fields.md#names), and an organization's name is kept whole.

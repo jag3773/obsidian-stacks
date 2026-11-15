@@ -93,7 +93,7 @@ describe("Sync and offline capture", function () {
 			expect(attachments).toEqual(["References/attachments/turingGammaPaperPartial2020.pdf"]);
 			expect(new Uint8Array(await diskRead(attachments[0]))).toEqual(pdf);
 			expect(await files("Inbox")).toEqual([]);
-			expect((await frontmatter("References/turingGammaPaperPartial2020.md"))?.pdf).toBe("[[turingGammaPaperPartial2020.pdf]]");
+			expect((await frontmatter("References/turingGammaPaperPartial2020.md"))?.attachments).toEqual(["[[turingGammaPaperPartial2020.pdf]]"]);
 		});
 	}
 

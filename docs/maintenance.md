@@ -14,8 +14,9 @@ The report is rewritten each time the check runs, so don't keep your own notes i
 | No citekey | Notes that can't be cited or exported. **Complete current reference** gives one a citekey. |
 | Citekeys used by more than one note | Compared without regard to case, as Stacks does when it picks a new key. A citation can only point at one of them. |
 | Filename doesn't match the citekey | The filename the citekey gives under your **Note filename format** setting, compared with the real one. A note named `smith2020 1` because `smith2020` was taken shows up here. |
-| `pdf` links that don't resolve | The note's `pdf` property points at a file that isn't there. When a PDF named after the citekey exists (preferring one in the attachments folder), the report names it and the relink command below can fix the link. |
-| PDFs in the attachments folder with no note | No reference note links to them, in its properties or its text. When one is named after the citekey of a note that has no `pdf`, the report says so. |
+| Links in `attachments` that don't resolve | An entry in the note's `attachments` points at a file that isn't there. When a file of the same format named after the citekey exists (preferring one in the attachments folder), the report names it and the repair command below can fix the link. |
+| Files in the attachments folder with no note | No reference note links to them, in its properties or its text. When one is named after the citekey of a note that has no file in that format, the report says so. |
+| Notes with the old `pdf` property | Notes from earlier versions of Stacks, which also linked the PDF in `pdf`. Stacks still reads it; the repair command below moves it into `attachments`. See [files and the main file](attachments.md#notes-from-earlier-versions). |
 | Possible duplicates | Groups of notes with the same DOI, ISBN or URL, or the same title and year. See [Duplicates](#duplicates). |
 | In one status for more than N days | Notes in a watched status that haven't changed in longer than the setting allows. See below. |
 | No type | Notes without a `type`, or with a type Stacks doesn't know (exported as a generic document). See [citation fields](citation-fields.md#types). |
@@ -30,14 +31,17 @@ Two settings, under **Health check**, control it:
 - **Report items in one status for more than**: days, default 365. 0 turns the check off.
 - **Statuses to watch**: default `queued, reading, reviewing`, the statuses that mean work is still ahead. Leave it empty to watch every status.
 
-## Relink PDFs named after citekeys
+## Repair attachment links
 
-Run **Stacks: Relink PDFs named after citekeys**. It runs the same check and lists each note it can fix:
+Run **Stacks: Repair attachment links**. It runs the same check and lists each change it can make:
 
-- a note whose `pdf` link doesn't resolve, where exactly one PDF named after its citekey exists (the attachments folder wins when there is one there and one elsewhere);
-- a note with no `pdf`, where an unlinked PDF in the attachments folder is named after its citekey.
+- a link in `attachments` that doesn't resolve, where exactly one file of the same format named after the citekey exists (the attachments folder wins when there is one there and one elsewhere). A broken link to an ebook is only ever repaired with an ebook, and one to a PDF with a PDF;
+- a note with no file in some format, where an unlinked file of that format in the attachments folder is named after its citekey;
+- a note with the old `pdf` property: its value moves to the front of `attachments` (it isn't listed twice), so it stays the note's PDF, and `pdf` is removed. When that link is broken and a PDF named after the citekey exists, the same change relinks it.
 
-"Named after its citekey" means `citekey.pdf`, or the name your **Attachment filename format** gives. Each line shows the current value and the PDF it will point to, with a toggle. Choose **Relink** to write the ticked ones: the `pdf` property gets a link to the PDF, and the `attachments` list gets the same link in place of the broken one. Note bodies aren't touched. A note whose `pdf` changed after the preview is skipped.
+"Named after its citekey" means `citekey.pdf` (or `.epub`, and so on), or the name your **Attachment filename format** gives. Each line shows what changes, with a toggle. Choose **Repair** to write the ticked ones. Note bodies aren't touched. A note that changed after the preview, so the change no longer fits, is skipped.
+
+The command's ID is still `relink-pdfs`, so a hotkey you set for it keeps working.
 
 ## Duplicates
 
@@ -64,7 +68,7 @@ The note kept is the one whose filename is its own citekey. When none or several
 Choose **Merge** to do it. For each other note, Stacks:
 
 1. Combines list properties (`collections`, `attachments`, `tags`, `aliases`), adding the items the kept note lacks.
-2. Fills every property the kept note leaves empty, such as a publisher or a `pdf`. Nothing the kept note already has is replaced, and its citekey never changes.
+2. Fills every property the kept note leaves empty, such as a publisher or a date added. Nothing the kept note already has is replaced, and its citekey never changes.
 3. Copies the other note's annotations block when the kept note's is missing or empty. Every other paragraph the kept note doesn't already have (your own notes, or highlights that differ) goes at the end, under `## Merged from <name>`, with the section heading it sat under. That section is outside the annotation markers, so re-extracting never removes it.
 4. Rewrites every link to the other note, in any note in the vault, to point to the kept note: wikilinks and Markdown links, embeds, links to headings and blocks, and links in properties. The alias or link text is kept. Links inside code are left alone.
 5. Moves the other note to the trash, following your **Deleted files** setting in Obsidian.

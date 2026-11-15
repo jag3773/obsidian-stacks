@@ -1,4 +1,5 @@
 import { App, TFile, TFolder, getFrontMatterInfo, normalizePath, parseYaml } from "obsidian";
+import { pickMain } from "./attachments";
 import { disambiguate, generateCitekey } from "./citekey";
 import { Identifier, canonicalIsbn, normalizeDoi, normalizeIsbn } from "./identifiers";
 import { ReferenceData } from "./metadata/types";
@@ -14,6 +15,9 @@ type Frontmatter = Record<string, unknown>;
 
 const isEmpty = (v: unknown) =>
 	v === undefined || v === null || v === "" || (Array.isArray(v) && v.filter((x) => x !== null && x !== "").length === 0);
+
+/** A property value as a list: a single value becomes one item, an empty one none. */
+export const listOf = (v: unknown): unknown[] => (Array.isArray(v) ? v : v === undefined || v === null || v === "" ? [] : [v]);
 
 /** Strip [[ ]] and aliases from a link-ish property value. */
 export function unlink(v: unknown): string {
@@ -153,6 +157,43 @@ export class Library {
 
 	frontmatter(file: TFile): Frontmatter {
 		return this.app.metadataCache.getFileCache(file)?.frontmatter ?? {};
+	}
+
+	/** The file a link-ish property value ("[[a.pdf#page=2|A]]", a bare path) points to from a note; null if none. */
+	resolveLink(value: unknown, from: TFile): TFile | null {
+		const linkpath = unlink(value).split("#")[0].trim();
+		return linkpath ? this.app.metadataCache.getFirstLinkpathDest(linkpath, from.path) : null;
+	}
+
+	/**
+	 * A note's attachments as written: the property earlier versions kept the PDF in first (it
+	 * was the note's PDF, so it still is), then the attachments list without it. See
+	 * src/attachments.ts.
+	 */
+	attachmentValues(note: TFile, fm: Frontmatter = this.frontmatter(note)): string[] {
+		const list = listOf(fm[this.prop("attachments")]).map(asText).filter((v) => v.trim());
+		const legacy = listOf(fm[this.s.legacyPdfProperty]).map(asText).find((v) => v.trim());
+		return legacy ? [legacy, ...list.filter((v) => unlink(v) !== unlink(legacy))] : list;
+	}
+
+	/** The files a note's attachments resolve to, in order, each once. */
+	attachmentFiles(note: TFile, fm?: Frontmatter): TFile[] {
+		const out: TFile[] = [];
+		for (const v of this.attachmentValues(note, fm)) {
+			const f = this.resolveLink(v, note);
+			if (f && !out.includes(f)) out.push(f);
+		}
+		return out;
+	}
+
+	/** The note's main file: its attachment in the most preferred format. */
+	mainAttachment(note: TFile): TFile | null {
+		return pickMain(this.attachmentFiles(note), this.s.preferredFormats);
+	}
+
+	/** The note's PDF, for the features that read PDFs: its first attached PDF. */
+	pdfOf(note: TFile): TFile | null {
+		return this.attachmentFiles(note).find((f) => f.extension.toLowerCase() === "pdf") ?? null;
 	}
 
 	inFolder(file: TFile, folder: string): boolean {
@@ -457,8 +498,7 @@ export class Library {
 
 	/** True if a link-ish property value resolves to target from note. */
 	private linksTo(value: unknown, target: TFile, note: TFile): boolean {
-		const linkpath = unlink(value);
-		return !!linkpath && this.app.metadataCache.getFirstLinkpathDest(linkpath, note.path) === target;
+		return this.resolveLink(value, note) === target;
 	}
 
 	/**
@@ -486,13 +526,12 @@ export class Library {
 
 	/**
 	 * A file already in the vault with the same bytes as `attachment`, at the name attach()
-	 * would give it or linked as the note's pdf. Another device (or a backup restore) filed
+	 * would give it or among the note's attachments. Another device (or a backup restore) filed
 	 * it already, so filing this copy too would only add "name 1.pdf".
 	 */
 	async alreadyFiled(note: TFile, attachment: TFile, known: AttachmentNaming = {}): Promise<TFile | null> {
 		const target = normalizePath(`${this.s.attachmentsFolder}/${this.attachmentName(note, known)}.${attachment.extension}`);
-		const pdf = unlink(this.frontmatter(note)[this.prop("pdf")]);
-		const candidates = [this.app.vault.getAbstractFileByPath(target), pdf ? this.app.metadataCache.getFirstLinkpathDest(pdf, note.path) : null];
+		const candidates = [this.app.vault.getAbstractFileByPath(target), ...this.attachmentFiles(note)];
 		let bytes: Uint8Array | null = null;
 		for (const c of candidates) {
 			if (!(c instanceof TFile) || c === attachment || c.extension !== attachment.extension) continue;
@@ -517,20 +556,22 @@ export class Library {
 	}
 
 	/**
-	 * Add a link to the file to the note's attachments list (once), and make it the pdf when
-	 * `primary` and the note has none. The file keeps its name.
+	 * Add a link to the file to the note's attachments list (once). A `primary` file goes first
+	 * when the note has no file in its format yet, so it is the main file of that format; any
+	 * other goes last. The file keeps its name.
 	 */
 	async linkAttachment(note: TFile, attachment: TFile, primary = false): Promise<void> {
 		const link = this.linkTo(attachment, note);
+		const ext = attachment.extension.toLowerCase();
 		this.assertActive();
 		await this.app.fileManager.processFrontMatter(note, (f: Frontmatter) => {
-			const pdfKey = this.prop("pdf");
-			if (primary && attachment.extension === "pdf" && isEmpty(f[pdfKey])) f[pdfKey] = link;
 			const listKey = this.prop("attachments");
 			const current = f[listKey];
 			// Keep a single existing value rather than replacing it.
 			const list: unknown[] = Array.isArray(current) ? current : isEmpty(current) ? [] : [current];
-			if (!list.some((v) => this.linksTo(v, attachment, note))) f[listKey] = [...list, link];
+			if (list.some((v) => this.linksTo(v, attachment, note))) return;
+			const hasFormat = [...listOf(f[this.s.legacyPdfProperty]), ...list].some((v) => this.resolveLink(v, note)?.extension.toLowerCase() === ext);
+			f[listKey] = primary && !hasFormat ? [link, ...list] : [...list, link];
 		});
 	}
 

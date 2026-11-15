@@ -10,6 +10,7 @@ import { PathSuggest, filePaths, folderPaths } from "./ui/PathSuggest";
 import { displayMaintenanceSettings } from "./ui/MaintenanceSettings";
 
 import { DEFAULT_COLOR_MAP, parseColorMap } from "./annotations";
+import { DEFAULT_FORMATS, parseFormats } from "./attachments";
 import { DEFAULT_PROPERTY_NAMES, FIELD_LABELS, PROPERTY_KEYS, PropertyKey } from "./properties";
 import type { SentRecord } from "./roundtrip";
 
@@ -22,6 +23,14 @@ export interface LibrarySettings {
 	inboxFolder: string;
 	filenameFormat: string;
 	attachmentFilenameFormat: string;
+	/** File extensions in order of preference; a reference's main file is its attachment in the first it has. */
+	preferredFormats: string[];
+	/**
+	 * The property earlier versions linked a reference's PDF in. Still read, as the first
+	 * attachment, so existing notes keep working; never written. Repair attachment links moves
+	 * it into the attachments list.
+	 */
+	legacyPdfProperty: string;
 	citekeyPattern: string;
 	templatePath: string;
 	/** The .base file that shows the library; its folder and properties drive the field mapping. */
@@ -96,6 +105,8 @@ export const DEFAULT_SETTINGS: LibrarySettings = {
 	inboxFolder: "Inbox",
 	filenameFormat: "{{citekey}}",
 	attachmentFilenameFormat: "{{citekey}}",
+	preferredFormats: [...DEFAULT_FORMATS],
+	legacyPdfProperty: "pdf",
 	citekeyPattern: "auth.lower + shorttitle(3, 3) + year",
 	templatePath: "",
 	libraryBase: "",
@@ -137,6 +148,18 @@ export const DEFAULT_SETTINGS: LibrarySettings = {
 export function withDefaults(saved: Partial<LibrarySettings> | null | undefined): LibrarySettings {
 	const s = Object.assign({}, DEFAULT_SETTINGS, saved ?? {});
 	s.propertyNames = Object.assign({}, DEFAULT_SETTINGS.propertyNames, saved?.propertyNames ?? {});
+	// The pdf field is gone: its files live in attachments. Settings saved before that keep
+	// the property it was mapped to, so notes that still have it are read correctly.
+	const savedNames = (saved?.propertyNames ?? {}) as Record<string, unknown>;
+	const savedLegacy = saved?.legacyPdfProperty;
+	s.legacyPdfProperty =
+		typeof savedLegacy === "string" && savedLegacy.trim()
+			? savedLegacy.trim()
+			: typeof savedNames.pdf === "string" && savedNames.pdf.trim()
+				? savedNames.pdf.trim()
+				: DEFAULT_SETTINGS.legacyPdfProperty;
+	delete (s.propertyNames as Record<string, unknown>).pdf;
+	s.preferredFormats = Array.isArray(s.preferredFormats) ? parseFormats(s.preferredFormats.filter((x) => typeof x === "string")) : [...DEFAULT_FORMATS];
 	// Guard against hand-edited or corrupted data.json.
 	if (!Array.isArray(s.statuses)) s.statuses = [...DEFAULT_SETTINGS.statuses];
 	if (!Array.isArray(s.urlProperties)) s.urlProperties = [...DEFAULT_SETTINGS.urlProperties];
@@ -252,7 +275,7 @@ export class LibrarySettingTab extends PluginSettingTab {
 	private async createBase(): Promise<void> {
 		const s = this.plugin.settings;
 		const path = freeBasePath((p) => !!this.app.vault.getAbstractFileByPath(p));
-		await this.app.vault.create(path, stringifyYaml(starterBase(s.referencesFolder, s.propertyNames, s.statuses)));
+		await this.app.vault.create(path, stringifyYaml(starterBase(s.referencesFolder, s.propertyNames, s.statuses, s.preferredFormats, s.legacyPdfProperty)));
 		await this.useBase(path, true);
 	}
 
@@ -303,7 +326,14 @@ export class LibrarySettingTab extends PluginSettingTab {
 
 		new Setting(containerEl).setName("Folders").setHeading();
 		path("References folder", "Where reference notes live. Cannot be the vault root.", folders, () => s.referencesFolder, (v) => (s.referencesFolder = v && v !== "/" ? v : DEFAULT_SETTINGS.referencesFolder), "References");
-		path("Attachments folder", "Where PDFs and other files are filed.", folders, () => s.attachmentsFolder, (v) => (s.attachmentsFolder = v), "References/attachments");
+		path("Attachments folder", "Where PDFs, ebooks and other files are filed.", folders, () => s.attachmentsFolder, (v) => (s.attachmentsFolder = v), "References/attachments");
+		text(
+			"Preferred formats",
+			"File formats in order of preference, comma-separated. A reference's main file is its attachment in the first of these formats it has; other files, such as downloads that came with a book, stay in its attachments.",
+			() => s.preferredFormats.join(", "),
+			(v) => (s.preferredFormats = parseFormats(v)),
+			DEFAULT_FORMATS.join(", ")
+		);
 		path("Inbox folder", "Drop zone for Web Clipper notes and PDFs.", folders, () => s.inboxFolder, (v) => (s.inboxFolder = v), "Inbox");
 
 		new Setting(containerEl).setName("Naming").setHeading();

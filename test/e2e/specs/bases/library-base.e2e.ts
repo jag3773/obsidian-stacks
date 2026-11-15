@@ -5,7 +5,9 @@
 // including note[...].isEmpty() on notes that lack the property, have an empty list or an
 // empty string, without an error, and the views select exactly the expected notes. Rows are
 // read from the Bases query controller's results (the internal API behind the table) and
-// cross-checked against the rendered table and its result count.
+// cross-checked against the rendered table and its result count. The table only draws the
+// rows that fit in the window (CI tiles two Obsidian windows side by side), so it is scrolled
+// through and every row it draws is collected.
 import { browser, expect } from "@wdio/globals";
 import { beforeEach, describe, it } from "mocha";
 import { frontmatter, read, resetLibrary, runCommand, waitForFiles, waitForNotice } from "../../helpers/stacks";
@@ -15,7 +17,10 @@ interface ViewResult {
 	errorText: string;
 	files: string[];
 	count: string;
+	/** The text of each table row, once each, in the order drawn. */
 	rendered: string[];
+	/** By row title (the first cell): the link target in the second cell (the File column), or "". */
+	secondCellLinks: Record<string, string>;
 }
 
 /** Open a view of a base in the active tab and read what it shows once its query has run. */
@@ -32,13 +37,35 @@ async function openView(file: string, viewName: string): Promise<ViewResult> {
 				await new Promise((r) => setTimeout(r, 100));
 			await new Promise((r) => setTimeout(r, 500));
 			const el = view.containerEl as HTMLElement;
+			// Every row, scrolling the table's scroller from top to bottom: rows off screen aren't drawn.
+			const rows = new Map<string, { text: string; link: string }>();
+			const collect = () => {
+				for (const row of Array.from(el.querySelectorAll(".bases-tbody .bases-tr"))) {
+					const cells = Array.from(row.querySelectorAll(".bases-td"));
+					const title = cells[0]?.textContent?.trim() ?? "";
+					// Bases renders links as <span class="internal-link" data-href>, in older versions as <a href>.
+					const link = cells[1]?.querySelector(".internal-link");
+					rows.set(title, { text: row.textContent ?? "", link: link?.getAttribute("data-href") ?? link?.getAttribute("href") ?? "" });
+				}
+			};
+			let scroller = el.querySelector(".bases-tbody") as HTMLElement | null;
+			while (scroller && !(scroller.scrollHeight > scroller.clientHeight && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement;
+			collect();
+			for (let i = 0; scroller && i < 50; i++) {
+				const before = scroller.scrollTop;
+				scroller.scrollTop = before + Math.max(50, scroller.clientHeight * 0.7);
+				await new Promise((r) => setTimeout(r, 150));
+				collect();
+				if (scroller.scrollTop === before) break;
+			}
+			if (scroller) scroller.scrollTop = 0;
 			return {
 				error: c.error ? String(c.error) : null,
 				errorText: Array.from(el.querySelectorAll(".bases-error")).map((e) => e.textContent ?? "").join(""),
 				files: Array.from((c.results as Map<{ path: string }, unknown>).keys()).map((f) => f.path).sort(),
 				count: el.querySelector(".bases-toolbar-result-count")?.textContent ?? "",
-				// The text of each rendered table row.
-				rendered: Array.from(el.querySelectorAll(".bases-tbody .bases-tr")).map((r) => r.textContent ?? ""),
+				rendered: [...rows.values()].map((r) => r.text),
+				secondCellLinks: Object.fromEntries([...rows].map(([title, r]) => [title, r.link])),
 			};
 		},
 		file,
@@ -47,9 +74,27 @@ async function openView(file: string, viewName: string): Promise<ViewResult> {
 }
 
 const EDGE_CASES = {
-	// An empty collections list and an empty pdf string count as empty too.
+	// An empty collections list and an empty attachments string count as empty too.
 	"References/dijkstraGoToStatement1968.md":
-		'---\ncitekey: dijkstraGoToStatement1968\ntype: article\ntitle: Go To Statement Considered Harmful\nauthors:\n  - "[[Edsger W. Dijkstra]]"\nyear: 1968\njournal: Communications of the ACM\ncollections: []\npdf: ""\nstatus: queued\n---\n',
+		'---\ncitekey: dijkstraGoToStatement1968\ntype: article\ntitle: Go To Statement Considered Harmful\nauthors:\n  - "[[Edsger W. Dijkstra]]"\nyear: 1968\njournal: Communications of the ACM\ncollections: []\nattachments: ""\nstatus: queued\n---\n',
+	// An ebook (a preferred format) after a broken link: not missing a file; the ebook is the main file.
+	"References/knuthArtComputerProgramming1968.md":
+		'---\ncitekey: knuthArtComputerProgramming1968\ntype: book\ntitle: The Art of Computer Programming\nauthors:\n  - "[[Donald Knuth]]"\nyear: 1968\npublisher: Addison-Wesley\ncollections: ["[[Strategy]]"]\nattachments:\n  - "[[gone.pdf]]"\n  - "[[knuthArtComputerProgramming1968.EPUB]]"\nstatus: shelved\n---\n',
+	"References/attachments/knuthArtComputerProgramming1968.EPUB": "not really an ebook",
+	// Only a download in no preferred format: missing a file, though the column still links it.
+	"References/shannonMathematicalTheory1948.md":
+		'---\ncitekey: shannonMathematicalTheory1948\ntype: article\ntitle: A Mathematical Theory of Communication\nauthors:\n  - "[[Claude Shannon]]"\nyear: 1948\njournal: Bell System Technical Journal\ncollections: ["[[Strategy]]"]\nattachments:\n  - "[[shannon-figures.zip]]"\nstatus: shelved\n---\n',
+	"References/attachments/shannon-figures.zip": "zip",
+	// Only the pdf property earlier versions wrote: not missing a file; that PDF is the main file.
+	"References/hopperCompilers1952.md":
+		'---\ncitekey: hopperCompilers1952\ntype: report\ntitle: The Education of a Computer\nauthors:\n  - "[[Grace Hopper]]"\nyear: 1952\ncollections: ["[[Strategy]]"]\npdf: "[[hopper-scan.pdf]]"\nstatus: shelved\n---\n',
+	"References/attachments/hopper-scan.pdf": "%PDF",
+	// The old pdf property names the main PDF; attachments lists a supplement first. Stacks
+	// reads the pdf property first, and so must the base.
+	"References/lamportTimeClocks1978.md":
+		'---\ncitekey: lamportTimeClocks1978\ntype: article\ntitle: Time, Clocks, and the Ordering of Events\nauthors:\n  - "[[Leslie Lamport]]"\nyear: 1978\ncollections: ["[[Strategy]]"]\npdf: "[[lamport-paper.pdf]]"\nattachments:\n  - "[[lamport-errata.pdf]]"\n  - "[[lamport-paper.pdf]]"\nstatus: shelved\n---\n',
+	"References/attachments/lamport-paper.pdf": "%PDF",
+	"References/attachments/lamport-errata.pdf": "%PDF",
 	// Not a reference (no citekey): never in the library base.
 	"References/Reading notes.md": "---\ntitle: Notes about my reading\n---\nJust notes.\n",
 };
@@ -73,22 +118,43 @@ describe("Library base in Bases", function () {
 		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Stacks.base");
 	});
 
-	it("evaluates every view, including Unfiled and Missing PDF, without errors", async function () {
+	it("evaluates every view, including Unfiled and Missing file, without errors", async function () {
 		await runCommand("create-library-base");
 		await waitForFiles("", (p) => p.includes("Stacks.base"), "no Stacks.base");
 
-		const all = ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md", "References/liskovProgrammingAbstractData1974.md", "References/porterCreatingSharedValue2011.md"];
+		const all = [
+			"References/dijkstraGoToStatement1968.md",
+			"References/hookerLaws1989.md",
+			"References/hopperCompilers1952.md",
+			"References/knuthArtComputerProgramming1968.md",
+			"References/lamportTimeClocks1978.md",
+			"References/liskovProgrammingAbstractData1974.md",
+			"References/porterCreatingSharedValue2011.md",
+			"References/shannonMathematicalTheory1948.md",
+		];
 		const expected: Record<string, string[]> = {
 			Library: all,
 			Queued: ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md"],
 			Reading: ["References/porterCreatingSharedValue2011.md"],
 			Reviewing: [],
 			Processed: ["References/liskovProgrammingAbstractData1974.md"],
-			Shelved: [],
+			Shelved: [
+				"References/hopperCompilers1952.md",
+				"References/knuthArtComputerProgramming1968.md",
+				"References/lamportTimeClocks1978.md",
+				"References/shannonMathematicalTheory1948.md",
+			],
 			// No collections property (Hooker), or an empty list (Dijkstra).
 			Unfiled: ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md"],
-			// No pdf property (Hooker, Liskov), or an empty string (Dijkstra). Porter has one.
-			"Missing PDF": ["References/dijkstraGoToStatement1968.md", "References/hookerLaws1989.md", "References/liskovProgrammingAbstractData1974.md"],
+			// No attachments (Hooker, Liskov), an empty string (Dijkstra), or only a file in no
+			// preferred format (Shannon). Porter has a PDF, Knuth an ebook, Hopper and Lamport a PDF
+			// in the old pdf property.
+			"Missing file": [
+				"References/dijkstraGoToStatement1968.md",
+				"References/hookerLaws1989.md",
+				"References/liskovProgrammingAbstractData1974.md",
+				"References/shannonMathematicalTheory1948.md",
+			],
 		};
 		const names = await browser.executeObsidian(({ app }) => {
 			const view = app.workspace.getMostRecentLeaf()!.view as any;
@@ -108,6 +174,22 @@ describe("Library base in Bases", function () {
 			expect({ view, rows: r.rendered.length }).toEqual({ view, rows: files.length });
 			for (const f of files) expect({ view, title: titles[f], shown: r.rendered.some((row) => row.includes(titles[f])) }).toEqual({ view, title: titles[f], shown: true });
 		}
+	});
+
+	it("links each reference's main file in the File column", async function () {
+		await runCommand("create-library-base");
+		await waitForFiles("", (p) => p.includes("Stacks.base"), "no Stacks.base");
+		const links = (await openView("Stacks.base", "Library")).secondCellLinks;
+		expect(links).toEqual({
+			"Creating Shared Value": "References/attachments/porterCreatingSharedValue2011.pdf",
+			"The Art of Computer Programming": "References/attachments/knuthArtComputerProgramming1968.EPUB",
+			"A Mathematical Theory of Communication": "References/attachments/shannon-figures.zip",
+			"The Education of a Computer": "References/attachments/hopper-scan.pdf",
+			"Time, Clocks, and the Ordering of Events": "References/attachments/lamport-paper.pdf",
+			"Go To Statement Considered Harmful": "",
+			"Of the Laws of Ecclesiastical Polity": "",
+			"Programming with Abstract Data Types": "",
+		});
 	});
 
 	it("lists a Stacks batch view's rows and opens the batch preview for exactly those", async function () {
