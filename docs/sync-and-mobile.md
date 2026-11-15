@@ -16,8 +16,8 @@ The same item can reach two devices: a clip saved on your phone and synced to yo
 
 - **The duplicate check runs before every capture.** Add reference, New reference without a lookup, and inbox processing look for an existing reference with the same DOI, ISBN (either form) or URL. A clip also keeps the URL it was captured from, so a second clip of the same page matches even after the first got a canonical URL.
 - **Notes Obsidian hasn't indexed yet count.** A note that just arrived through sync may not be in Obsidian's metadata cache for a moment. Before creating a note, Stacks reads the properties of any reference note the cache doesn't know yet, so a just-synced copy is still found.
-- **An identical PDF isn't filed again.** When a PDF in the inbox belongs to an existing reference and the same file (byte for byte) is already filed under that reference's attachment name, or is already one of the reference's `attachments`, Stacks leaves the inbox copy where it is and tells you. It doesn't add `name 1.pdf`. A PDF with different content for the same reference is still attached.
-- **A PDF that is still arriving waits.** A PDF copied or synced into the inbox in pieces can sit there half written for a while. Stacks only files a PDF whose end it can see (the `%%EOF` marker in its last bytes). Until then it stays in the inbox with a notice, and Stacks looks at it again when it next changes. **Process inbox now** files such a PDF as it is, for the rare PDF written without that marker.
+- **An identical file isn't filed again.** When a PDF, ebook or document in the inbox belongs to an existing reference and the same file (byte for byte) is already filed under that reference's attachment name, or is already one of the reference's `attachments`, Stacks leaves the inbox copy where it is and tells you. It doesn't add `name 1.pdf`. A file with different content for the same reference is still attached.
+- **A file that is still arriving waits.** A file copied or synced into the inbox in pieces can sit there half written for a while. Stacks only files one whose end it can see: the `%%EOF` marker in a PDF's last bytes, the closing directory of an EPUB, Word or OpenDocument file (they are ZIP archives), or the last record of a Kindle book. Until then it stays in the inbox with a notice, and Stacks looks at it again when it next changes. **Process inbox now** files such a file as it is, for the rare one written without that ending.
 - **Nothing is overwritten.** New notes are created with Obsidian's create call, which fails rather than replacing an existing file. Renames and moves pick a free name (`name 1.md`) when the target exists. Property edits go through Obsidian's frontmatter API, which rewrites only the note's properties. Files copied to the tablet folder are written to a temporary name and then renamed, so a sync client never uploads half a file.
 - **One capture at a time on each device.** Duplicate checks and writes on one device run in a queue, so two captures of the same item on the same device can't both create a note.
 
@@ -32,7 +32,7 @@ References created with **New reference without a lookup** and no ISBN, DOI or U
 
 You can capture while offline. Web Clipper notes and PDFs land in the inbox like any other file.
 
-- **A lookup that gets no answer leaves the item in the inbox, unchanged.** When none of the requests for a clip's URL (or a PDF's DOI or ISBN) gets any response from a server, Stacks treats the network as unreachable. The clip or PDF stays in the inbox exactly as it was, and a notice says so. Nothing is renamed, moved or half filled.
+- **A lookup that gets no answer leaves the item in the inbox, unchanged.** When none of the requests for a clip's URL (or a file's DOI or ISBN) gets any response from a server, Stacks treats the network as unreachable. The clip or file stays in the inbox exactly as it was, and a notice says so. Nothing is renamed, moved or half filled.
 - **A server that answers with an error is different.** A site that blocks Stacks, or a service that is down but reachable, still answers. Then the clip is filed with what Web Clipper saved, as before. A PDF whose identifier finds nothing is filed under its own metadata or filename.
 - **Retrying.** Run **Process inbox now**, or restart Obsidian with **Process inbox automatically** on. Stacks doesn't retry on a timer while it keeps running.
 - A site whose address doesn't resolve at all looks the same as being offline, so its clips stay in the inbox. To file such a clip, delete its URL property and use **New reference without a lookup**, or remove the clip.
@@ -48,7 +48,7 @@ Stacks is not marked desktop-only. On phones and tablets, everything works excep
 | Feature | Mobile |
 |---|---|
 | Add reference, New reference without a lookup, Refresh metadata, Complete current reference | Yes. Lookups use Obsidian's `requestUrl`, which works on mobile |
-| Inbox processing (clips and PDFs), at startup and as files arrive | Yes. PDFs are read with the PDF.js that Obsidian bundles |
+| Inbox processing (clips, PDFs, ebooks and documents), at startup and as files arrive | Yes. PDFs are read with the PDF.js that Obsidian bundles; EPUB, Word and OpenDocument files are unpacked with the system's built-in decompression, which needs iOS 16.4 or later (on older systems they are filed under their filename) |
 | Extract annotations, extract when a PDF is saved | Yes |
 | Batch edits, Create library base, the Stacks batch view | Yes |
 | Bibliography export, Zotero import | Yes |
@@ -67,7 +67,7 @@ The end-to-end tests ([test/e2e](../test/e2e/README.md)) run Stacks in real Obsi
 - Two clips of the same item arriving together, or a clip arriving together with the reference note another device already filed for it, give one note.
 - A PDF written in two pieces, quickly or slowly, is filed once and arrives intact.
 - Files that reached the inbox while Obsidian was closed are processed at startup, after the startup wait.
-- Offline: clips and PDFs stay in the inbox unchanged, and **Process inbox now** files them once the network is back.
+- Offline: clips, PDFs and ebooks stay in the inbox unchanged, and **Process inbox now** files them once the network is back.
 - A DOI changed by another device while a batch lookup is pending isn't overwritten.
 - Mobile: Stacks loads, the round-trip commands and desktop-only settings are absent, a status change to the send status sends nothing, and capture from the inbox works.
 

@@ -1,6 +1,7 @@
 import { App, Notice, TFile, getFrontMatterInfo, parseYaml } from "obsidian";
 import { familyFromFullName } from "./citekey";
-import { findIdentifierInText, normalizeDoi } from "./identifiers";
+import { FORMAT_LABELS, FileInfo, InboxFormat, fileComplete, identifiersOf, inboxFormat, readFile } from "./formats";
+import { Identifier, normalizeDoi } from "./identifiers";
 import { Library } from "./library";
 import { Fetcher } from "./metadata/http";
 import { parseDate, yearOf } from "./metadata/dates";
@@ -25,7 +26,7 @@ export class Inbox {
 		const inbox = this.settings().inboxFolder.trim();
 		// An empty inbox setting would match the whole vault, so treat it as "off".
 		if (!inbox || inbox === "/") return false;
-		return (file.extension === "md" || file.extension === "pdf") && this.library.inFolder(file, inbox);
+		return (file.extension === "md" || inboxFormat(file.extension) !== null) && this.library.inFolder(file, inbox);
 	}
 
 	/** Still in the inbox after a network wait (not moved, renamed out or deleted meanwhile). */
@@ -34,13 +35,13 @@ export class Inbox {
 	}
 
 	/**
-	 * File one inbox item. `explicit` (Process inbox now) files a PDF that looks incomplete as
+	 * File one inbox item. `explicit` (Process inbox now) files a file that looks incomplete as
 	 * it is; automatic processing leaves it for when it has fully arrived.
 	 */
 	async process(file: TFile, explicit = false): Promise<TFile | null> {
 		if (file.extension === "md") return this.processNote(file);
-		if (file.extension === "pdf") return this.processPdf(file, explicit);
-		return null;
+		const format = inboxFormat(file.extension);
+		return format ? this.processFile(file, format, explicit) : null;
 	}
 
 	/** A clipped note: read its URL, enrich, set the clip status, file it. */
@@ -91,44 +92,49 @@ export class Inbox {
 		});
 	}
 
-	/** A PDF: find a DOI or ISBN inside, look it up, create the note, file the PDF. */
-	async processPdf(file: TFile, explicit = false): Promise<TFile | null> {
+	/** What a file says about itself; null when it can't be read as its format. */
+	private async read(file: TFile, format: InboxFormat, bytes: Uint8Array): Promise<FileInfo | null> {
+		try {
+			if (format !== "pdf") return await readFile(format, bytes);
+			const pdf = await readPdf(this.app, file);
+			const authors = pdf.author ? pdf.author.split(/\s*(?:;|,| and )\s*/).filter(Boolean) : [];
+			return { identifiers: [], text: pdf.text, title: pdf.title, authors, book: false };
+		} catch (e) {
+			console.warn(`[stacks] could not read ${FORMAT_LABELS[format]}`, file.path, e);
+			return null;
+		}
+	}
+
+	/**
+	 * A PDF, ebook or document: find an ISBN or DOI in its metadata or text, look it up, create
+	 * the note (or find the existing one), file the file. What the file says about itself fills
+	 * what the lookup lacks, or stands in when nothing is found.
+	 */
+	async processFile(file: TFile, format: InboxFormat, explicit = false): Promise<TFile | null> {
 		const s = this.settings();
-		// A PDF still being copied or synced in: filing it now would file a truncated copy under
+		const label = FORMAT_LABELS[format];
+		const bytes = new Uint8Array(await this.app.vault.readBinary(file));
+		// A file still being copied or synced in: filing it now would file a truncated copy under
 		// its filename. Its next change brings it back here (main.ts watches inbox changes).
-		if (!explicit && !looksComplete(new Uint8Array(await this.app.vault.readBinary(file)))) {
+		if (!explicit && !(format === "pdf" ? looksComplete(bytes) : fileComplete(format, bytes))) {
 			new Notice(`Stacks: ${file.name} looks incomplete (still being copied or synced?); left in the inbox until it is complete.`);
 			return null;
 		}
-		let data: ReferenceData | null = null;
-		let pdfTitle: string | undefined;
-		let pdfAuthor: string | undefined;
+		const info = await this.read(file, format, bytes);
 		const net = new NetworkTracker();
-		try {
-			const pdf = await readPdf(this.app, file);
-			pdfTitle = pdf.title;
-			pdfAuthor = pdf.author;
-			const id = findIdentifierInText(pdf.text);
-			if (id) data = await lookup(net.wrap(this.fetch), id, { crossrefMailto: s.crossrefMailto });
-		} catch (e) {
-			console.warn("[stacks] could not read PDF", file.path, e);
+		let data: ReferenceData | null = null;
+		// The file's own ISBN first, then one found in its text.
+		for (const id of info ? identifiersOf(info).slice(0, 3) : []) {
+			data = await lookup(net.wrap(this.fetch), id, { crossrefMailto: s.crossrefMailto });
+			if (data || net.unreachable) break;
 		}
-		// The PDF names a DOI or ISBN but the network is down: retry later rather than file it
-		// under its filename.
+		// The file names an identifier but the network is down: retry later rather than file it
+		// under what the file alone says.
 		if (!data && net.unreachable) {
 			new Notice(`Stacks: couldn't reach the network for ${file.name}; left in the inbox to retry.`);
 			return null;
 		}
-		if (!data) {
-			const authors = pdfAuthor ? pdfAuthor.split(/\s*(?:;|,| and )\s*/).filter(Boolean) : [];
-			data = {
-				type: "document",
-				title: pdfTitle || file.basename,
-				authors,
-				familyNames: authors.map(familyFromFullName),
-				source: "PDF",
-			};
-		}
+		data = data ? fillFromFile(data, info) : fromFile(info, file.basename, label, format === "epub" || format === "mobi");
 		const found = data;
 		// The note's frontmatter may not be indexed yet (new, or reserved by a concurrent
 		// capture), so pass the naming values along; values already on the note win.
@@ -144,8 +150,10 @@ export class Inbox {
 					return null;
 				}
 				if (!this.stillWaiting(file)) return null;
+				// Named as it arrived: attaching renames it.
+				const arrived = file.name;
 				await this.library.attach(dup, file, naming);
-				new Notice(`Stacks: attached ${file.name} to existing ${dup.basename}`);
+				new Notice(`Stacks: attached ${arrived} to existing ${dup.basename}`);
 				return dup;
 			}
 			if (!this.stillWaiting(file)) return null;
@@ -210,5 +218,49 @@ export function fillFromClip(found: ReferenceData, clip: ReferenceData): Referen
 	if (out.abstract && clip.abstract && truncated(out.abstract) && !truncated(clip.abstract) && clip.abstract.length > out.abstract.length)
 		out.abstract = clip.abstract;
 	out.abstract ??= clip.abstract;
+	return out;
+}
+
+/**
+ * A reference from what a file says about itself: an ebook is a book, anything else a
+ * document. `book` decides when the file couldn't be read at all.
+ */
+export function fromFile(info: FileInfo | null, fallbackTitle: string, source: string, book = false): ReferenceData {
+	const authors = info?.authors ?? [];
+	const date = parseDate(info?.date);
+	const isbn = info?.identifiers.find((i): i is Identifier => i.kind === "isbn")?.value;
+	const doi = info?.identifiers.find((i): i is Identifier => i.kind === "doi")?.value;
+	return {
+		type: (info?.book ?? book) ? "book" : "document",
+		title: info?.title || fallbackTitle,
+		authors,
+		familyNames: authors.map(familyFromFullName),
+		date,
+		year: yearOf(date),
+		publisher: info?.publisher,
+		language: info?.language,
+		abstract: info?.description,
+		isbn,
+		doi,
+		source,
+	};
+}
+
+/** A looked-up reference, with what it lacks taken from the file's own metadata. */
+export function fillFromFile(found: ReferenceData, info: FileInfo | null): ReferenceData {
+	if (!info) return found;
+	const own = fromFile(info, found.title, found.source);
+	const out = { ...found };
+	if (!out.authors.length && own.authors.length) {
+		out.authors = own.authors;
+		out.familyNames = own.familyNames;
+	}
+	if (!out.date && own.date) {
+		out.date = own.date;
+		out.year ??= own.year;
+	}
+	out.publisher ??= own.publisher;
+	out.language ??= own.language;
+	out.abstract ??= own.abstract;
 	return out;
 }

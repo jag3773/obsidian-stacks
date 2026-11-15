@@ -28,6 +28,26 @@ When Stacks files a file for a reference (from the inbox, Find PDF, or an import
 
 Imports list each record's files with your preferred formats first.
 
+## Dropping files in the inbox
+
+Drop a file in your inbox folder and Stacks identifies it, creates its reference note (or finds the one you already have) and files it:
+
+| Format | Extensions | What Stacks reads |
+|---|---|---|
+| PDF | `.pdf` | A DOI, ISBN or PubMed ID in the first pages; the document's title and author |
+| EPUB, including Kobo | `.epub`, `.kepub`, `.kepub.epub` | The book's ISBN, title, authors (not translators or editors), publisher, date, language and description from its package metadata; an ISBN on the copyright page when the metadata has none |
+| Kindle | `.mobi`, `.azw`, `.azw3`, `.prc` | The ISBN, title, authors, publisher, date, language and description in the book's header. It isn't encrypted, so books with DRM are identified too |
+| Word | `.docx` | The document's title and author, and a DOI, ISBN or PubMed ID in its text |
+| OpenDocument text | `.odt` | The same as Word |
+
+With an ISBN or DOI, Stacks looks the work up as **Add reference** does, and the file's own metadata fills what the lookup lacks, such as a publisher. Without one, or when no lookup knows it, the reference is made from the file alone: a book for an ebook, a document otherwise, titled by the file's metadata or its filename.
+
+An ebook of a book you already have (the same ISBN) is attached to that reference rather than filed again, so your PDF and your EPUB end up side by side in its `attachments`. The same file dropped twice is left in the inbox with a notice.
+
+A file still being copied or synced waits in the inbox until it is complete, and one that names an ISBN or DOI waits while you are offline; see [sync, backups and mobile](sync-and-mobile.md).
+
+Not read: Kindle KFX files (their format isn't documented), older Word `.doc` files, and Kobo's highlight database.
+
 ## Notes from earlier versions
 
 Earlier versions of Stacks also linked the PDF in a separate `pdf` property. Stacks still reads it, as the reference's first attachment, so its PDF stays the same and nothing stops working. It no longer writes it.

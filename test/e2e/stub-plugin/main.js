@@ -28,6 +28,8 @@ const WORKS = {
 	"10.1234/e2e.epsilon": { title: "Epsilon offline capture", authors: [["Barbara", "Liskov"]], year: 2022 },
 	"10.1234/e2e.zeta": { title: "Zeta and the pending lookup", authors: [["Edsger", "Dijkstra"]], year: 1968 },
 	"10.1234/e2e.eta": { title: "Eta mobile capture", authors: [["Margaret", "Hamilton"]], year: 2016 },
+	// Named in the text of test/fixtures/formats/water-report.docx.
+	"10.1234/e2e.water": { title: "Water Points in the Upper Valley", authors: [["Grace", "Mbeki"], ["Lukas", "Brandt"]], year: 2024 },
 };
 
 /** Web pages a clip can point to; each names its DOI the way publishers do. */
