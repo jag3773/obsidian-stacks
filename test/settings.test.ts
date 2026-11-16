@@ -249,3 +249,23 @@ test("adopting a base with keepMappings changes the folder but not the fields", 
 	assert.equal(plugin.settings.propertyNames.authors, "author", "a normal adoption re-matches");
 	plugin.unload();
 });
+
+test("the library base renamed or moved in Obsidian is followed; another base's rename isn't", async () => {
+	const app = new App();
+	const base = app.vault.addFile("Library.base", "views: []");
+	const other = app.vault.addFile("Reading list.base", "views: []");
+	const plugin = new LibraryPlugin(app as any, { id: "stacks" } as any);
+	(plugin as any).data = { libraryBase: "Library.base" };
+	await plugin.onload();
+	await app.fileManager.renameFile(base, "Stacks.base");
+	await new Promise((r) => setImmediate(r));
+	assert.equal(plugin.settings.libraryBase, "Stacks.base");
+	assert.equal((plugin as any).data.libraryBase, "Stacks.base", "saved");
+	await app.vault.createFolder("Bases");
+	await app.fileManager.renameFile(base, "Bases/Stacks.base");
+	await new Promise((r) => setImmediate(r));
+	assert.equal(plugin.settings.libraryBase, "Bases/Stacks.base");
+	await app.fileManager.renameFile(other, "Reading.base");
+	await new Promise((r) => setImmediate(r));
+	assert.equal(plugin.settings.libraryBase, "Bases/Stacks.base");
+});

@@ -283,6 +283,12 @@ export default class LibraryPlugin extends Plugin {
 					this.statuses.delete(oldPath);
 					if (st !== undefined) this.statuses.set(f.path, st);
 					if (f instanceof TFile) void this.roundTrip?.onVaultRename(f, oldPath);
+					// The library base renamed or moved in Obsidian (Library.base → Stacks.base): keep
+					// pointing at it, so the settings don't offer to create another one.
+					if (f instanceof TFile && f.extension === "base" && normalizePath(this.settings.libraryBase.trim()) === oldPath) {
+						this.settings.libraryBase = f.path;
+						void this.saveSettings();
+					}
 				})
 			);
 			this.registerEvent(

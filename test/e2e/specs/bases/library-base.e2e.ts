@@ -10,7 +10,7 @@
 // through and every row it draws is collected.
 import { browser, expect } from "@wdio/globals";
 import { beforeEach, describe, it } from "mocha";
-import { frontmatter, read, resetLibrary, runCommand, waitForFiles, waitForNotice } from "../../helpers/stacks";
+import { frontmatter, read, resetLibrary, runCommand, setSettings, waitForFiles, waitForNotice } from "../../helpers/stacks";
 
 interface ViewResult {
 	error: string | null;
@@ -116,6 +116,29 @@ describe("Library base in Bases", function () {
 		await runCommand("create-library-base");
 		await waitForNotice("Stacks: created Stacks 1.base.");
 		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Stacks.base");
+	});
+
+	it("follows the library base when it is renamed or moved in Obsidian, as from 0.4's Library.base", async function () {
+		await resetLibrary({ "Library.base": "views:\n  - type: table\n    name: Library\n" });
+		await setSettings({ libraryBase: "Library.base" });
+		const setting = () => browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase as string);
+		const rename = (from: string, to: string) =>
+			browser.executeObsidian(
+				async ({ app }, a, b) => {
+					if (b.includes("/") && !app.vault.getAbstractFileByPath(b.slice(0, b.lastIndexOf("/")))) await app.vault.createFolder(b.slice(0, b.lastIndexOf("/")));
+					await app.fileManager.renameFile(app.vault.getAbstractFileByPath(a)!, b);
+				},
+				from,
+				to
+			);
+		await rename("Library.base", "Stacks.base");
+		await browser.waitUntil(async () => (await setting()) === "Stacks.base", { timeoutMsg: "the setting didn't follow the rename" });
+		await rename("Stacks.base", "Bases/Stacks.base");
+		await browser.waitUntil(async () => (await setting()) === "Bases/Stacks.base", { timeoutMsg: "the setting didn't follow the move" });
+		// Another base's rename leaves it alone.
+		await rename("Reading list.base", "Reading.base");
+		await browser.pause(300);
+		expect(await setting()).toBe("Bases/Stacks.base");
 	});
 
 	it("evaluates every view, including Unfiled and Missing file, without errors", async function () {
