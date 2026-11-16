@@ -9,7 +9,7 @@ import { Cancelled, Library } from "./library";
 import { Fetcher } from "./metadata/http";
 import { lookup } from "./metadata/lookup";
 import { Host, RoundTrip, runPreExtraction, toArrayBuffer } from "./roundtrip";
-import { LibrarySettingTab, LibrarySettings, withDefaults } from "./settings";
+import { LibrarySettingTab, LibrarySettings, basePath, withDefaults } from "./settings";
 import { AddReferenceModal } from "./ui/AddReferenceModal";
 import { ReferenceData } from "./metadata/types";
 import { NewReferenceModal } from "./ui/NewReferenceModal";
@@ -283,6 +283,7 @@ export default class LibraryPlugin extends Plugin {
 					this.statuses.delete(oldPath);
 					if (st !== undefined) this.statuses.set(f.path, st);
 					if (f instanceof TFile) void this.roundTrip?.onVaultRename(f, oldPath);
+					if (f instanceof TFile) this.followLibraryBase(f, oldPath);
 				})
 			);
 			this.registerEvent(
@@ -417,6 +418,16 @@ export default class LibraryPlugin extends Plugin {
 	}
 
 	/** A file created or changed: process it when it is in the inbox, once it stops changing. */
+	/**
+	 * The library base renamed or moved in Obsidian (Library.base → Stacks.base): keep pointing
+	 * at it, so the settings don't show it as missing and offer to create another.
+	 */
+	private followLibraryBase(f: TFile, oldPath: string): void {
+		if (f.extension !== "base" || !basePath(this.settings.libraryBase) || basePath(this.settings.libraryBase) !== oldPath) return;
+		this.settings.libraryBase = f.path;
+		void this.saveSettings();
+	}
+
 	private onInboxChange(f: TAbstractFile): void {
 		if (!(f instanceof TFile) || !this.settings.processInboxAutomatically || !this.inbox.accepts(f)) return;
 		// Give the writer (Web Clipper, Finder copy, sync) a moment to finish; each change restarts the wait.

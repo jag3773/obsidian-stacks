@@ -53,3 +53,8 @@ Not read: Kindle KFX files (their format isn't documented), older Word `.doc` fi
 Earlier versions of Stacks also linked the PDF in a separate `pdf` property. Stacks still reads it, as the reference's first attachment, so its PDF stays the same and nothing stops working; the library base's **File** column and **Missing file** view read it the same way. It no longer writes it.
 
 **Check library health** lists the notes that still have it, and **Repair attachment links** moves each one into `attachments` and removes `pdf`, after a preview. See [library health](maintenance.md#repair-attachment-links). If your settings mapped the PDF field to another property name, that name is the one Stacks reads and moves.
+
+Moving the property can't update what reads it outside Stacks:
+
+- **A base made by an earlier version.** Its **Missing PDF** view checks `pdf`, so after the move it lists every reference. Create a new base with the **Missing file** view, or change the view's filter; see [a base from an earlier version](batch-and-collections.md#a-base-from-an-earlier-version).
+- **Your own queries.** Bases formulas, Dataview queries and templates that read `pdf` need to read `attachments` instead. In a Bases formula, a link to the first PDF in a note's attachments is `if(note["attachments"].isEmpty(), "", list(note["attachments"]).filter(value.asFile() && value.asFile().ext.lower() == "pdf")[0])`. The `isEmpty()` check comes first because an empty `attachments` value would make the rest an error.

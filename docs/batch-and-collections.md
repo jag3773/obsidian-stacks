@@ -30,6 +30,18 @@ Run **Stacks: Create base** (or press **Create base** in the settings). Stacks w
 
 If no library base is set in the settings yet, the new file becomes the library base. Edit the views freely afterwards; Stacks only reads the base to learn your folder and property names.
 
+### A base from an earlier version
+
+Earlier versions of Stacks named the base `Library.base`, and its last view was **Missing PDF**, which lists references with no `pdf` property.
+
+- **Renaming it is safe.** Stacks keeps its own copy of the base's folder and property names, so nothing stops working when the file is renamed or moved. Rename it in Obsidian, not outside it, and Stacks follows: the **Base** setting changes to the new name. Versions before this change don't follow the rename; if **Settings → Stacks → Base** still shows the old name and offers **Create base**, choose the renamed file there instead.
+- **Renaming doesn't update its views.** Once your notes' `pdf` properties are moved into `attachments` (see [notes from earlier versions](attachments.md#notes-from-earlier-versions)), **Missing PDF** lists every reference. You can:
+  - **Change that view's filter** to `note["attachments"].isEmpty()`. This lists references with nothing in `attachments`. It doesn't list one whose only attachment link is broken, or whose files are all in formats you don't prefer, as **Missing file** does.
+  - **Start from a new base** with the **Missing file** view and **File** column:
+    1. Run **Stacks: Create base**. It writes `Stacks.base`, or `Stacks 1.base` if that name is taken (for example, by your renamed old base), and leaves your old base alone.
+    2. Choose the new file in **Settings → Stacks → Base**.
+    3. Recreate any views you added to the old base, then delete it.
+
 ## Batch edits
 
 Batch edits change many reference notes at once:

@@ -10,7 +10,7 @@
 // through and every row it draws is collected.
 import { browser, expect } from "@wdio/globals";
 import { beforeEach, describe, it } from "mocha";
-import { frontmatter, read, resetLibrary, runCommand, waitForFiles, waitForNotice } from "../../helpers/stacks";
+import { frontmatter, getSetting, read, renameInVault, resetLibrary, runCommand, setSettings, waitForFiles, waitForNotice } from "../../helpers/stacks";
 
 interface ViewResult {
 	error: string | null;
@@ -110,12 +110,31 @@ describe("Library base in Bases", function () {
 		await waitForNotice("Stacks: created Stacks.base.");
 		await waitForFiles("", (p) => p.includes("Stacks.base"), "no Stacks.base");
 		expect(await read("Reading list.base")).toBe(existing);
-		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Stacks.base");
+		expect(await getSetting("libraryBase")).toBe("Stacks.base");
 
 		// A second run picks a free name.
 		await runCommand("create-library-base");
 		await waitForNotice("Stacks: created Stacks 1.base.");
-		expect(await browser.executeObsidian(({ app }) => (app as any).plugins.plugins.stacks.settings.libraryBase)).toBe("Stacks.base");
+		expect(await getSetting("libraryBase")).toBe("Stacks.base");
+	});
+
+	it("follows the library base when it, or its folder, is renamed or moved in Obsidian", async function () {
+		// A base from an earlier version, still named Library.base.
+		await resetLibrary({ "Library.base": "views:\n  - type: table\n    name: Library\n" });
+		await setSettings({ libraryBase: "Library.base" });
+		const follows = async (path: string, what: string) =>
+			browser.waitUntil(async () => (await getSetting("libraryBase")) === path, { timeoutMsg: `the setting didn't follow ${what}: ${await getSetting("libraryBase")}` });
+		await renameInVault("Library.base", "Stacks.base");
+		await follows("Stacks.base", "the rename");
+		await renameInVault("Stacks.base", "Bases/Stacks.base");
+		await follows("Bases/Stacks.base", "the move");
+		// Obsidian fires a rename for each file in a renamed folder.
+		await renameInVault("Bases", "Library bases");
+		await follows("Library bases/Stacks.base", "its folder's rename");
+		// Another base's rename leaves it alone.
+		await renameInVault("Reading list.base", "Reading.base");
+		await browser.pause(300);
+		expect(await getSetting("libraryBase")).toBe("Library bases/Stacks.base");
 	});
 
 	it("evaluates every view, including Unfiled and Missing file, without errors", async function () {
