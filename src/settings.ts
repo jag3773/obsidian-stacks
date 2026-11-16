@@ -202,6 +202,22 @@ interface BaseReading {
 }
 
 
+/**
+ * Settings read again after data.json changed outside Obsidian (a sync service, git, an edit by
+ * hand). What is on disk wins, as it would after a restart, with one exception: the tablet
+ * records (tabletSent). The plugin writes those as it watches this device's tablet folder and
+ * never deletes one, so this device's records are kept and records only on disk are added; a
+ * copy synced from another device can't erase them. Returns null when the file isn't a
+ * settings object (missing, half written, not JSON), so the change is ignored rather than
+ * resetting every setting to its default.
+ */
+export function reloadedSettings(current: LibrarySettings, loaded: unknown): LibrarySettings | null {
+	if (!loaded || typeof loaded !== "object" || Array.isArray(loaded)) return null;
+	const fresh = withDefaults(loaded);
+	fresh.tabletSent = { ...fresh.tabletSent, ...current.tabletSent };
+	return fresh;
+}
+
 /** The vault path a Base setting names: trimmed and normalized; "" when none is set. */
 export function basePath(setting: string): string {
 	const p = setting.trim();

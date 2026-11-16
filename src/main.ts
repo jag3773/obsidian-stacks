@@ -9,7 +9,7 @@ import { Cancelled, Library } from "./library";
 import { Fetcher } from "./metadata/http";
 import { lookup } from "./metadata/lookup";
 import { Host, RoundTrip, runPreExtraction, toArrayBuffer } from "./roundtrip";
-import { LibrarySettingTab, LibrarySettings, basePath, withDefaults } from "./settings";
+import { LibrarySettingTab, LibrarySettings, basePath, reloadedSettings, withDefaults } from "./settings";
 import { AddReferenceModal } from "./ui/AddReferenceModal";
 import { ReferenceData } from "./metadata/types";
 import { NewReferenceModal } from "./ui/NewReferenceModal";
@@ -41,6 +41,8 @@ const sameId = (a: Identifier | null, b: Identifier | null) => !!a && !!b && a.k
 
 export default class LibraryPlugin extends Plugin {
 	settings!: LibrarySettings;
+	/** The settings tab, kept to redraw it when data.json changes outside Obsidian. */
+	private settingTab?: LibrarySettingTab;
 	library!: Library;
 	inbox!: Inbox;
 	exporter!: BibliographyExporter;
@@ -118,7 +120,8 @@ export default class LibraryPlugin extends Plugin {
 				() => this.alive
 			);
 
-		this.addSettingTab(new LibrarySettingTab(this.app, this));
+		this.settingTab = new LibrarySettingTab(this.app, this);
+		this.addSettingTab(this.settingTab);
 		this.addRibbonIcon("library", "Add reference", () => this.openAddReference());
 
 		this.addCommand({ id: "add-reference", name: "Add reference", callback: () => this.openAddReference() });
@@ -328,6 +331,32 @@ export default class LibraryPlugin extends Plugin {
 
 	async loadSettings(): Promise<void> {
 		this.settings = withDefaults((await this.loadData()) as Partial<LibrarySettings> | null);
+	}
+
+	/**
+	 * data.json changed outside Obsidian (Obsidian calls this): take the settings on disk, so the
+	 * next save doesn't write the old ones back over them. Updated in place, since the settings
+	 * tab and some commands hold the object. Nothing is saved here, so a sync client doesn't see
+	 * a change it didn't make. See reloadedSettings for what is kept.
+	 */
+	async onExternalSettingsChange(): Promise<void> {
+		let loaded: unknown;
+		try {
+			loaded = await this.loadData();
+		} catch (e) {
+			console.warn(`[${PREFIX}] data.json changed but couldn't be read; keeping the current settings`, e);
+			return;
+		}
+		const fresh = reloadedSettings(this.settings, loaded);
+		if (!fresh) {
+			console.warn(`[${PREFIX}] data.json changed but isn't a settings object; keeping the current settings`);
+			return;
+		}
+		Object.assign(this.settings, fresh);
+		// A tablet folder changed on disk is followed, as when it changes in the settings tab.
+		if (this.alive && this.layoutReady) this.startRoundTrip();
+		// The settings tab, if open, shows the new values.
+		if (this.settingTab?.containerEl.isConnected) this.settingTab.display();
 	}
 
 	async saveSettings(): Promise<void> {

@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { App } from "obsidian";
 import LibraryPlugin from "../src/main";
-import { LibrarySettingTab, basePath } from "../src/settings";
+import { LibrarySettingTab, basePath, reloadedSettings, withDefaults } from "../src/settings";
 import { PathSuggest, filePaths, folderPaths } from "../src/ui/PathSuggest";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -275,4 +275,61 @@ test("a Base setting names its file trimmed and normalized, or nothing", () => {
 	assert.equal(basePath("  Bases//Stacks.base "), "Bases/Stacks.base");
 	assert.equal(basePath("/Stacks.base"), "Stacks.base");
 	assert.equal(basePath("   "), "");
+});
+
+// ---------------------------------------------------------------- data.json changed outside Obsidian
+
+const sent = (file: string, sentAt: string) => ({ file, attachment: `A/${file}`, note: `R/${file}.md`, vaultHash: "v", externalHash: "e", externalSize: 1, externalMtime: 1, sentAt });
+
+test("settings reloaded from disk: the disk wins, this device's tablet records are kept, and a bad file is ignored", () => {
+	const current = withDefaults({ libraryBase: "Library.base", statuses: ["queued", "done"], tabletSent: { "a.pdf": sent("a.pdf", "2026-11-01"), "b.pdf": sent("b.pdf", "2026-11-02") } });
+	const fresh = reloadedSettings(current, {
+		libraryBase: "Stacks.base",
+		statuses: ["queued", "reading", "done"],
+		tabletSent: { "b.pdf": sent("b.pdf", "2020-01-01"), "c.pdf": sent("c.pdf", "2026-11-03") },
+		propertyNames: { pdf: "scan" },
+	})!;
+	assert.equal(fresh.libraryBase, "Stacks.base");
+	assert.deepEqual(fresh.statuses, ["queued", "reading", "done"]);
+	// This device's records win; one only on disk is added.
+	assert.deepEqual(Object.keys(fresh.tabletSent).sort(), ["a.pdf", "b.pdf", "c.pdf"]);
+	assert.equal(fresh.tabletSent["b.pdf"].sentAt, "2026-11-02");
+	// The same migrations as at startup.
+	assert.equal(fresh.legacyPdfProperty, "scan");
+	assert.equal(fresh.citationStyle, "", "defaults fill what the file leaves out");
+	for (const bad of [null, undefined, "", "{not json", [], 3]) assert.equal(reloadedSettings(current, bad), null, JSON.stringify(bad));
+});
+
+test("onExternalSettingsChange takes the settings on disk in place, saves nothing, and ignores an unreadable file", async () => {
+	const app = new App();
+	const plugin = new LibraryPlugin(app as any, { id: "stacks" } as any);
+	(plugin as any).data = { libraryBase: "Library.base", defaultStatus: "queued" };
+	await plugin.onload();
+	const settings = plugin.settings;
+	let saves = 0;
+	const realSave = (plugin as any).saveData.bind(plugin);
+	(plugin as any).saveData = async (d: unknown) => {
+		saves++;
+		return realSave(d);
+	};
+	// A sync client (or a hand edit) changes data.json.
+	(plugin as any).data = { libraryBase: "Stacks.base", defaultStatus: "reading" };
+	await plugin.onExternalSettingsChange();
+	assert.equal(plugin.settings, settings, "the same object, so what holds it sees the change");
+	assert.equal(settings.libraryBase, "Stacks.base");
+	assert.equal(settings.defaultStatus, "reading");
+	assert.equal(saves, 0, "nothing written back");
+	// A half-written file, or one that can't be read, leaves the settings alone.
+	(plugin as any).data = "{\"libraryBase\": \"Sta";
+	await plugin.onExternalSettingsChange();
+	(plugin as any).loadData = async () => {
+		throw new SyntaxError("Unexpected end of JSON input");
+	};
+	await plugin.onExternalSettingsChange();
+	assert.equal(settings.libraryBase, "Stacks.base");
+	assert.equal(settings.defaultStatus, "reading");
+	// The next save writes what was taken from disk, not the old values.
+	await plugin.saveSettings();
+	assert.equal((plugin as any).data.libraryBase, "Stacks.base");
+	plugin.unload();
 });
