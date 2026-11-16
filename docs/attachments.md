@@ -56,5 +56,5 @@ Earlier versions of Stacks also linked the PDF in a separate `pdf` property. Sta
 
 Moving the property can't update what reads it outside Stacks:
 
-- **A base made by Stacks 0.4.** Its **Missing PDF** view checks `pdf`, so after the move it lists every reference. Create a new base with the **Missing file** view, or change the view's filter; see [a base from Stacks 0.4](batch-and-collections.md#a-base-from-stacks-04).
+- **A base made by an earlier version.** Its **Missing PDF** view checks `pdf`, so after the move it lists every reference. Create a new base with the **Missing file** view, or change the view's filter; see [a base from an earlier version](batch-and-collections.md#a-base-from-an-earlier-version).
 - **Your own queries.** Bases formulas, Dataview queries and templates that read `pdf` need to read `attachments` instead. In a Bases formula, a link to the first PDF in a note's attachments is `if(note["attachments"].isEmpty(), "", list(note["attachments"]).filter(value.asFile() && value.asFile().ext.lower() == "pdf")[0])`. The `isEmpty()` check comes first because an empty `attachments` value would make the rest an error.

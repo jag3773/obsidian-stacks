@@ -202,14 +202,20 @@ interface BaseReading {
 }
 
 
+/** The vault path a Base setting names: trimmed and normalized; "" when none is set. */
+export function basePath(setting: string): string {
+	const p = setting.trim();
+	return p ? normalizePath(p) : "";
+}
+
 export class LibrarySettingTab extends PluginSettingTab {
 	constructor(app: App, private plugin: LibraryPlugin) {
 		super(app, plugin);
 	}
 
 	private baseFile(path: string): TFile | null {
-		if (!path.trim()) return null;
-		const f = this.app.vault.getAbstractFileByPath(normalizePath(path));
+		if (!basePath(path)) return null;
+		const f = this.app.vault.getAbstractFileByPath(basePath(path));
 		return f instanceof TFile && f.extension === "base" ? f : null;
 	}
 

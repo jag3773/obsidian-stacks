@@ -185,6 +185,29 @@ export async function setSettings(values: Record<string, unknown>): Promise<void
 	);
 }
 
+/** A Stacks setting's current value in the running plugin. */
+export async function getSetting<T = unknown>(key: string): Promise<T> {
+	return browser.executeObsidian(({ app }, k) => (app as any).plugins.plugins.stacks.settings[k] as T, key);
+}
+
+/**
+ * Rename or move a file or folder through Obsidian, as its file explorer does (links update,
+ * "rename" fires). The destination's parent folder is created when missing.
+ */
+export async function renameInVault(from: string, to: string): Promise<void> {
+	await browser.executeObsidian(
+		async ({ app }, a, b) => {
+			const parent = b.includes("/") ? b.slice(0, b.lastIndexOf("/")) : "";
+			if (parent && !app.vault.getAbstractFileByPath(parent)) await app.vault.createFolder(parent);
+			const f = app.vault.getAbstractFileByPath(a);
+			if (!f) throw new Error(`no ${a} to rename`);
+			await app.fileManager.renameFile(f, b);
+		},
+		from,
+		to
+	);
+}
+
 /** A Web Clipper note as it lands in the inbox. */
 export function clipNote(title: string, url: string, extra = ""): string {
 	return `---\ntitle: "${title}"\nsource: ${url}\ncreated: 2026-11-01\ntags:\n  - clippings\n${extra}---\n\nClipped text of ${title}.\n`;

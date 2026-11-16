@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { App } from "obsidian";
 import LibraryPlugin from "../src/main";
-import { LibrarySettingTab } from "../src/settings";
+import { LibrarySettingTab, basePath } from "../src/settings";
 import { PathSuggest, filePaths, folderPaths } from "../src/ui/PathSuggest";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -268,4 +268,11 @@ test("the library base renamed or moved in Obsidian is followed; another base's 
 	await app.fileManager.renameFile(other, "Reading.base");
 	await new Promise((r) => setImmediate(r));
 	assert.equal(plugin.settings.libraryBase, "Bases/Stacks.base");
+	plugin.unload();
+});
+
+test("a Base setting names its file trimmed and normalized, or nothing", () => {
+	assert.equal(basePath("  Bases//Stacks.base "), "Bases/Stacks.base");
+	assert.equal(basePath("/Stacks.base"), "Stacks.base");
+	assert.equal(basePath("   "), "");
 });
