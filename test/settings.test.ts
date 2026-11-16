@@ -333,3 +333,44 @@ test("onExternalSettingsChange takes the settings on disk in place, saves nothin
 	assert.equal((plugin as any).data.libraryBase, "Stacks.base");
 	plugin.unload();
 });
+
+/** loadData calls answered by hand, in any order. */
+function controlledLoads(plugin: LibraryPlugin) {
+	const pending: ((data: unknown) => void)[] = [];
+	(plugin as any).loadData = () => new Promise((resolve) => pending.push(resolve));
+	return pending;
+}
+
+test("overlapping reloads: an older read finishing last doesn't restore older settings", async () => {
+	const app = new App();
+	const plugin = new LibraryPlugin(app as any, { id: "stacks" } as any);
+	(plugin as any).data = { defaultStatus: "queued" };
+	await plugin.onload();
+	const loads = controlledLoads(plugin);
+	const older = plugin.onExternalSettingsChange();
+	const newer = plugin.onExternalSettingsChange();
+	// The newer read finishes first, then the older one.
+	loads[1]({ defaultStatus: "reading" });
+	await newer;
+	loads[0]({ defaultStatus: "queued" });
+	await older;
+	assert.equal(plugin.settings.defaultStatus, "reading");
+	plugin.unload();
+});
+
+test("a save while a reload reads isn't undone by it", async () => {
+	const app = new App();
+	const plugin = new LibraryPlugin(app as any, { id: "stacks" } as any);
+	(plugin as any).data = { defaultStatus: "queued" };
+	await plugin.onload();
+	const loads = controlledLoads(plugin);
+	const reload = plugin.onExternalSettingsChange();
+	// A change made in the settings tab, saved before the read finishes.
+	plugin.settings.defaultStatus = "reviewing";
+	await plugin.saveSettings();
+	loads[0]({ defaultStatus: "queued" });
+	await reload;
+	assert.equal(plugin.settings.defaultStatus, "reviewing");
+	assert.equal((plugin as any).data.defaultStatus, "reviewing");
+	plugin.unload();
+});

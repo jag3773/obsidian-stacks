@@ -43,6 +43,11 @@ export default class LibraryPlugin extends Plugin {
 	settings!: LibrarySettings;
 	/** The settings tab, kept to redraw it when data.json changes outside Obsidian. */
 	private settingTab?: LibrarySettingTab;
+	/**
+	 * Advanced by every reload of data.json and every save. A reload whose number is no longer
+	 * current when its read finishes is stale: a newer reload, or a save, came after it started.
+	 */
+	private settingsGeneration = 0;
 	library!: Library;
 	inbox!: Inbox;
 	exporter!: BibliographyExporter;
@@ -340,6 +345,7 @@ export default class LibraryPlugin extends Plugin {
 	 * a change it didn't make. See reloadedSettings for what is kept.
 	 */
 	async onExternalSettingsChange(): Promise<void> {
+		const generation = ++this.settingsGeneration;
 		let loaded: unknown;
 		try {
 			loaded = await this.loadData();
@@ -347,6 +353,9 @@ export default class LibraryPlugin extends Plugin {
 			console.warn(`[${PREFIX}] data.json changed but couldn't be read; keeping the current settings`, e);
 			return;
 		}
+		// Reads can finish out of order. One that a newer reload or a save overtook would restore
+		// older settings, and the next save would write them back.
+		if (generation !== this.settingsGeneration) return;
 		const fresh = reloadedSettings(this.settings, loaded);
 		if (!fresh) {
 			console.warn(`[${PREFIX}] data.json changed but isn't a settings object; keeping the current settings`);
@@ -360,6 +369,7 @@ export default class LibraryPlugin extends Plugin {
 	}
 
 	async saveSettings(): Promise<void> {
+		this.settingsGeneration++;
 		await this.saveData(this.settings);
 		// Follow a changed tablet folder once the layout (and so the round trip) has started.
 		if (this.alive && this.layoutReady) this.startRoundTrip();
