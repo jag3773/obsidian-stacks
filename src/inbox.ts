@@ -6,7 +6,7 @@ import { Library } from "./library";
 import { Fetcher } from "./metadata/http";
 import { parseDate, yearOf } from "./metadata/dates";
 import { truncated } from "./metadata/found";
-import { lookup } from "./metadata/lookup";
+import { fillGaps, lookup, lookupBookByTitle } from "./metadata/lookup";
 import { ReferenceData } from "./metadata/types";
 import { readPdf } from "./pdf";
 import { PropertyKey } from "./properties";
@@ -74,7 +74,13 @@ export class Inbox {
 		// gaps, or stands in when the lookup failed. The URL ends up in the configured url
 		// property even if the clipper used "source".
 		const clip = fromClip(fm, s.propertyNames, file.basename);
-		const basis: ReferenceData = data ? fillFromClip({ ...data, url: data.url ?? url }, clip) : { ...clip, url };
+		let basis: ReferenceData = data ? fillFromClip({ ...data, url: data.url ?? url }, clip) : { ...clip, url };
+		// A book page that came back without the book on it (a bot check in its place), clipped
+		// with no date or ISBN: find the book by its title and author instead.
+		if (basis.type === "book" && !basis.isbn && !basis.date) {
+			const book = await lookupBookByTitle(this.fetch, basis.title, basis.authors, { crossrefMailto: s.crossrefMailto });
+			if (book) basis = fillFromCatalog(basis, book);
+		}
 		return this.library.exclusive(async () => {
 			if (!this.stillWaiting(file)) return null;
 			// Check the enriched identifiers and the clip's own URL, whether or not the lookup worked.
@@ -218,6 +224,17 @@ export function fillFromClip(found: ReferenceData, clip: ReferenceData): Referen
 	if (out.abstract && clip.abstract && truncated(out.abstract) && !truncated(clip.abstract) && clip.abstract.length > out.abstract.length)
 		out.abstract = clip.abstract;
 	out.abstract ??= clip.abstract;
+	return out;
+}
+
+/**
+ * found, with its gaps (date, publisher, ISBN…) filled from the book's catalog record, and a
+ * cut-off title replaced by the record's.
+ */
+export function fillFromCatalog(found: ReferenceData, book: ReferenceData): ReferenceData {
+	const out = fillGaps(found, book);
+	out.isbn ??= book.isbn;
+	if (truncated(out.title) && book.title) out.title = book.title;
 	return out;
 }
 

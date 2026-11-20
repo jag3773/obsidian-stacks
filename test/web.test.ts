@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { parseDate } from "../src/metadata/dates";
 import { parseGitHubRepo } from "../src/metadata/github";
-import { lookup } from "../src/metadata/lookup";
+import { lookup, lookupBookByTitle } from "../src/metadata/lookup";
 import { Fetcher } from "../src/metadata/http";
 import { META_LIMITS, parseWebpage, readMeta } from "../src/metadata/webpage";
 import { parseHtml } from "../src/metadata/html";
@@ -355,4 +355,64 @@ test("a sparse Open Library record is completed from Google Books, keeping the p
 	assert.equal(r?.date, "2021-05-04");
 	assert.equal(r?.publisher, "Ballantine");
 	assert.equal(r?.abstract, "Desc.");
+});
+
+// A book found by its title and author, for a book page that couldn't be read ------------------
+
+const OL_SEARCH = (docs: unknown[]) => ({ text: JSON.stringify({ numFound: docs.length, docs }) });
+const OL_RECORD = {
+	text: JSON.stringify({
+		"ISBN:9781939124463": {
+			title: "Inside Church Planting Movements",
+			subtitle: "What 25 Years of Assessments Reveal",
+			authors: [{ name: "David Garrison" }],
+			publish_date: "2025",
+			publishers: [{ name: "WIGTake Resources" }],
+		},
+	}),
+};
+const GARRISON = { title: "Inside Church Planting Movements", author_name: ["David Garrison"], first_publish_year: 2025, isbn: ["1939124468", "9781939124463"] };
+
+test("a book is found by its title and author through Open Library's search", async () => {
+	const fetch = serve({ "https://openlibrary.org/search.json": OL_SEARCH([GARRISON]), "https://openlibrary.org/api/books": OL_RECORD });
+	const r = await lookupBookByTitle(fetch, "Inside Church Planting Movements: What 25 Years of Asse…", ["David Garrison"]);
+	assert.equal(r?.isbn, "9781939124463");
+	assert.equal(r?.date, "2025");
+	assert.equal(r?.publisher, "WIGTake Resources");
+	assert.equal(r?.title, "Inside Church Planting Movements: What 25 Years of Assessments Reveal");
+	const search = new URL(fetch.calls[0]);
+	assert.equal(search.searchParams.get("title"), "Inside Church Planting Movements", "the main title, without the cut-off subtitle");
+	assert.equal(search.searchParams.get("author"), "Garrison");
+});
+
+test("a site's suffix and a cut-off word are dropped from the title searched for", async () => {
+	const fetch = serve({ "https://openlibrary.org/search.json": OL_SEARCH([]) });
+	await lookupBookByTitle(fetch, "Project Hail Mary by Andy Weir | Goodreads", ["Andy Weir"]);
+	assert.equal(new URL(fetch.calls[0]).searchParams.get("title"), "Project Hail Mary");
+	await lookupBookByTitle(fetch, "The Spontaneous Expansion of the Chu…", ["Roland Allen"]);
+	assert.equal(new URL(fetch.calls[1]).searchParams.get("title"), "The Spontaneous Expansion of the");
+});
+
+test("a search result by another author, or with another title, isn't taken", async () => {
+	const other = { ...GARRISON, author_name: ["Someone Else"] };
+	const similar = { ...GARRISON, title: "Church Planting Movements", isbn: ["9780972921009"] };
+	for (const doc of [other, similar]) {
+		const fetch = serve({ "https://openlibrary.org/search.json": OL_SEARCH([doc]), "https://openlibrary.org/api/books": OL_RECORD });
+		const r = await lookupBookByTitle(fetch, doc === similar ? "Church Planting Movements Among the Unreached" : "Inside Church Planting Movements", ["David Garrison"]);
+		assert.equal(r, null);
+		assert.equal(fetch.calls.some((u) => u.includes("/api/books")), false, "no record is fetched without a match");
+	}
+});
+
+test("a cut-off title matches a result whose title starts with it", async () => {
+	const fetch = serve({ "https://openlibrary.org/search.json": OL_SEARCH([GARRISON]), "https://openlibrary.org/api/books": OL_RECORD });
+	const r = await lookupBookByTitle(fetch, "Inside Church Planting Mov…", ["David Garrison"]);
+	assert.equal(r?.isbn, "9781939124463");
+});
+
+test("no title search without a title or an author", async () => {
+	const fetch = serve({});
+	assert.equal(await lookupBookByTitle(fetch, "", ["David Garrison"]), null);
+	assert.equal(await lookupBookByTitle(fetch, "Inside Church Planting Movements", []), null);
+	assert.equal(fetch.calls.length, 0);
 });

@@ -24,6 +24,7 @@ The clip's body is never changed. Stacks writes properties only, then renames th
 1. Stacks reads the URL and looks the page up, the same way **Add reference** does: site readers, schema.org data, COinS, then the standard citation tags. A page that names a DOI is completed from Crossref; a PubMed page from NCBI's E-utilities.
 2. If the clip carries a DOI and the page lookup found none, the DOI is looked up instead.
 3. Where the lookup has no value, the clip's own title, author, published date and description fill in. If every lookup fails, the clip's values are used on their own, and the note is still filed.
+   - **A book with no date or ISBN is searched for by title and author.** This happens when a book page (Goodreads, Amazon, Kobo) comes back as a bot check in place of the book. Stacks searches Open Library for the clip's title and first author, takes a result only when the author's family name matches and the title before any subtitle is the same, and completes the note from that book's record. A title the site cut short ("…") is replaced with the full one. The record may be a different edition from the page you clipped, so its date and publisher can differ; check them, or clip the page again later.
 4. Values the lookup found replace the clipper's guesses (such as a page title with the site's name in it), unless you edited them while the lookup ran. Your URL and status are kept.
 5. The note gets a citekey, the **Status for web clips**, and its configured filename, and moves into the references folder.
 
