@@ -527,6 +527,54 @@ test("a Goodreads clip is filed with author, publication date, abstract and ISBN
 	assert.match(String(props.citekey), /^weir.*2021$/i);
 });
 
+test("a Goodreads clip whose page comes back empty is found by its title and author", async () => {
+	const { app, inbox } = setup();
+	const url = "https://www.goodreads.com/book/show/242589780-inside-church-planting-movements?ac=1&from_search=true";
+	// Web Clipper's default template: Goodreads' og:title is cut off, and there is no date.
+	const clip = app.vault.addFile(
+		"Inbox/garrison.md",
+		`---\n${JSON.stringify({ title: "Inside Church Planting Movements: What 25 Years of Asse…", source: url, author: ["[[David Garrison]]"], published: null })}\n---\nclipped text\n`
+	);
+	http.handler = async ({ url: u }) => {
+		// A bot check in place of the book page: nothing of the book on it.
+		if (u === url) return { status: 202, text: "<!DOCTYPE html><html><head><title></title></head><body><noscript>JavaScript is disabled</noscript></body></html>" };
+		if (u.startsWith("https://openlibrary.org/search.json"))
+			return { status: 200, text: JSON.stringify({ docs: [{ title: "Inside Church Planting Movements", author_name: ["David Garrison"], isbn: ["9781939124463"] }] }) };
+		if (u.startsWith("https://openlibrary.org/api/books"))
+			return {
+				status: 200,
+				text: JSON.stringify({
+					"ISBN:9781939124463": { title: "Inside Church Planting Movements", subtitle: "What 25 Years of Assessments Reveal", authors: [{ name: "David Garrison" }], publish_date: "2025", publishers: [{ name: "WIGTake Resources" }] },
+				}),
+			};
+		return { status: 404, text: "" };
+	};
+	assert.ok(await inbox.process(clip));
+	await flush();
+	const props = fm(app, clip);
+	assert.equal(props.published, "2025");
+	assert.equal(props.year, 2025);
+	assert.equal(props.isbn, "9781939124463");
+	assert.equal(props.publisher, "WIGTake Resources");
+	assert.equal(props.title, "Inside Church Planting Movements: What 25 Years of Assessments Reveal", "the cut-off title is replaced");
+	assert.equal(props.type, "book");
+	assert.match(String(props.citekey), /^garrison.*2025$/);
+});
+
+test("a book clip with no title match keeps what Web Clipper saved, and searches only once", async () => {
+	const { app, inbox } = setup();
+	const url = "https://www.goodreads.com/book/show/1-unknown";
+	const clip = app.vault.addFile("Inbox/unknown.md", `---\n${JSON.stringify({ title: "An Unknown Book", source: url, author: ["Ann Author"] })}\n---\n`);
+	http.handler = async ({ url: u }) =>
+		u === url ? { status: 202, text: "<html><head><title></title></head></html>" } : u.startsWith("https://openlibrary.org/search.json") ? { status: 200, text: JSON.stringify({ docs: [] }) } : { status: 404, text: "" };
+	assert.ok(await inbox.process(clip));
+	await flush();
+	const props = fm(app, clip);
+	assert.equal(props.title, "An Unknown Book");
+	assert.equal(props.published, undefined);
+	assert.equal(http.calls.filter((c) => c.startsWith("https://openlibrary.org/search.json")).length, 1);
+});
+
 test("a site that blocks the plugin falls back on what Web Clipper saved", async () => {
 	const { app, inbox } = setup();
 	const url = "https://www.kobo.com/us/en/ebook/project-hail-mary";

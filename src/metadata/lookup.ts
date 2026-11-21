@@ -1,10 +1,11 @@
+import { familyFromFullName } from "../citekey";
 import { Identifier, pubmedIdFromUrl } from "../identifiers";
 import { lookupArxiv } from "./arxiv";
 import { lookupCrossref, lookupDoiOrg } from "./crossref";
 import { lookupGitHub } from "./github";
 import { lookupGoogleBooks } from "./googlebooks";
 import { Fetcher } from "./http";
-import { lookupOpenLibrary } from "./openlibrary";
+import { lookupOpenLibrary, searchOpenLibrary } from "./openlibrary";
 import { lookupPubmed } from "./pubmed";
 import { ReferenceData } from "./types";
 import { lookupWebpage } from "./webpage";
@@ -83,6 +84,24 @@ export async function lookup(fetch: Fetcher, id: Identifier, opts: LookupOptions
 			return r && !r.doi ? { ...r, accessed: r.accessed ?? today() } : r;
 		}
 	}
+}
+
+/**
+ * A book found by its title and first author, for when nothing names its ISBN: a book page
+ * that came back without the book on it (a bot check) and a clip that saved no ISBN. Open
+ * Library's search must give a confident match (same author, same title before any
+ * subtitle); its ISBN is then looked up as usual.
+ */
+export async function lookupBookByTitle(fetch: Fetcher, title: string, authors: string[], opts: LookupOptions = {}): Promise<ReferenceData | null> {
+	const family = authors[0] ? familyFromFullName(authors[0]) : "";
+	if (!title.trim() || !family) return null;
+	let isbn: string | null = null;
+	try {
+		isbn = await searchOpenLibrary(fetch, title, family);
+	} catch (e) {
+		console.warn("[stacks] title search failed", e);
+	}
+	return isbn ? lookup(fetch, { kind: "isbn", value: isbn }, opts) : null;
 }
 
 /** The local calendar date, YYYY-MM-DD. */
