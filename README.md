@@ -12,6 +12,8 @@ If Obsidian is where you think, it should be enough to manage the sources behind
 
 > **Early release.** Stacks is in Obsidian's community plugin directory. Capture, metadata lookup, citekeys, filing PDFs, ebooks and documents, library views, annotation extraction, imports, bibliography export, formatted citations, and library maintenance are all available. It is young software, tested on its author's own vault so far, so keep a backup of your vault and [tell us](#try-it-and-tell-us) what you find.
 
+https://github.com/user-attachments/assets/ced9d074-954a-471c-9409-3585323aaea8
+
 ## Get started
 
 1. **Install Stacks.** In Obsidian, open **Settings → Community plugins**, choose **Browse**, search for **Stacks**, then install and enable it. (Other options are under [Install](#install).)
