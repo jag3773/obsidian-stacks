@@ -33,6 +33,8 @@ export interface FixturePage {
 export interface FixtureOptions {
 	/** /PageLabels: roman numerals for the first `roman` pages, then decimal from 1. */
 	roman?: number;
+	/** The document information dictionary (/Info): Title, Author, Creator, CreationDate… */
+	info?: Record<string, string>;
 }
 
 const esc = (s: string) => s.replace(/[\\()]/g, (c) => `\\${c}`);
@@ -83,6 +85,7 @@ export function buildPdf(pages: FixturePage[], options: FixtureOptions = {}): Ui
 		? ` /PageLabels << /Nums [0 << /S /r >> ${options.roman} << /S /D /St 1 >>] >>`
 		: "";
 	objects[catalog - 1] = `<< /Type /Catalog /Pages ${pagesObj} 0 R${labels} >>`;
+	const info = options.info ? add(`<< ${Object.entries(options.info).map(([k, v]) => `/${k} ${pdfString(v)}`).join(" ")} >>`) : 0;
 
 	let out = "%PDF-1.7\n";
 	const offsets: number[] = [];
@@ -93,7 +96,7 @@ export function buildPdf(pages: FixturePage[], options: FixtureOptions = {}): Ui
 	const xref = out.length;
 	out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
 	for (const o of offsets) out += `${String(o).padStart(10, "0")} 00000 n \n`;
-	out += `trailer\n<< /Size ${objects.length + 1} /Root ${catalog} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+	out += `trailer\n<< /Size ${objects.length + 1} /Root ${catalog} 0 R${info ? ` /Info ${info} 0 R` : ""} >>\nstartxref\n${xref}\n%%EOF\n`;
 	return new TextEncoder().encode(out);
 }
 
