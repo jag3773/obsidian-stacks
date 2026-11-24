@@ -43,7 +43,11 @@ This page was written against Kindle Highlights 2.3.1.
   3. failing that, from the Kindle plugin's own title and author.
 
   Then it gets a citekey and is renamed in the Kindle folder.
-- **A book already in your library gets the Kindle highlights added to its existing reference.** Stacks recognizes it by ISBN, DOI or URL, or by the same title before any subtitle and the same first author. A Kindle edition's ISBN is usually not the one on your print edition, so the title and author match is what usually finds it. Then:
+- **Offline, or a catalog asks Stacks to wait?** Then the note is left as it is, with a notice, rather than settled on Amazon's title. This covers being offline, a rate limit, or a server error. Run **Complete current reference** on it later, or **Complete metadata** on the Kindle folder.
+- **Notes are looked up one at a time.** A first sync of a large Kindle library writes many notes at once, so the lookups take a while, but the catalogs aren't flooded.
+- **A book already in your library gets the Kindle highlights added to its existing reference.** Stacks recognizes it by ISBN, DOI or URL, or by its title and first author. A Kindle edition's ISBN is usually not the one on your print edition, so the title and author match is what usually finds it.
+  - **The title compared** is the part before any subtitle, without a series or edition name in parentheses. So "Mistborn (The Mistborn Saga Book 1)" matches "Mistborn: The Final Empire".
+  - **Different volumes stay apart.** Two titles that each name a different volume, part or book number are different books, so Volume 2 never goes into Volume 1's reference. Then:
   - the existing reference gets the `kindle-*` properties and every highlight it doesn't already have, at the end of the note;
   - the reference moves into the Kindle folder, because that is where the Kindle plugin looks next time;
   - the note the Kindle plugin just wrote goes to the trash;
@@ -55,8 +59,13 @@ This page was written against Kindle Highlights 2.3.1.
 - **Keep the reference in the Kindle folder and keep its `kindle-*` properties.** If you move it out or delete them, the next sync writes a new note for the book. Stacks then adds it to the reference again, without duplicating highlights it already has, and moves the reference back into the Kindle folder.
 - **Leave the `^ref-…` at the end of each highlight's line.** Write your own thoughts in a new paragraph rather than inside a highlight's line. A highlight that loses its id is added again on the next sync.
 - **Highlights you copied into a reference by hand before** (from an older Kindle note, without `^ref-…` ids) aren't recognized as the same highlights. After the first sync adds the plugin's copies, delete the old section.
+- **Keep the Kindle folder inside the references folder.** Running **Complete current reference** on a Kindle note somewhere else has two outcomes:
+  - **A new book** is moved into the references folder, out of the Kindle plugin's folder, so the next sync writes a new note for it.
+  - **A book already in your library** stays where its reference is, so the Kindle plugin won't find it on its next sync.
+
+  A notice says which happened.
 - **Books you don't want in your library:** list them under Kindle Highlights → Ignored books.
-- **Highlights from `My Clippings.txt`** carry no ISBN, so those books are found by title and author.
+- **Highlights from `My Clippings.txt`** carry no ISBN, so those books are found by title and author. Their author lines are often "Lewis, C. S." or "Forsgren, Nicole;Humble, Jez". Stacks reads both as names, in the usual order.
 
 ## Kindle highlights in your library base
 

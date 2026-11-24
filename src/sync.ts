@@ -13,12 +13,15 @@ import { Fetcher } from "./metadata/http";
 export class NetworkTracker {
 	responses = 0;
 	failures = 0;
+	/** Answers that mean "try again later": rate limited (429) or a server error (5xx). */
+	transient = 0;
 
 	wrap(fetch: Fetcher): Fetcher {
 		return async (url, headers) => {
 			try {
 				const res = await fetch(url, headers);
 				this.responses++;
+				if (res.status === 429 || res.status >= 500) this.transient++;
 				return res;
 			} catch (e) {
 				this.failures++;
@@ -34,6 +37,14 @@ export class NetworkTracker {
 	 */
 	get unreachable(): boolean {
 		return this.failures > 0 && this.responses === 0;
+	}
+
+	/**
+	 * True when any request failed or was told to come back later: "not found" can't be
+	 * trusted, so nothing should be decided on it.
+	 */
+	get incomplete(): boolean {
+		return this.failures > 0 || this.transient > 0;
 	}
 }
 

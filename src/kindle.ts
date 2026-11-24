@@ -1,6 +1,7 @@
 import { familyFromFullName } from "./citekey";
 import { normalizeTitle, paragraphs } from "./duplicates";
 import { ReferenceData } from "./metadata/types";
+import { displayName, parseName } from "./names";
 import { asText } from "./text";
 
 /**
@@ -38,12 +39,23 @@ export function kindleProperties(fm: Fm): Fm {
 /** Degrees and titles Amazon puts on a name: "Nicole Forsgren PhD", "Dr. Henry Cloud". */
 const DEGREE = /^(?:dr\.?|prof\.?)\s+|,?\s+(?:ph\.?\s?d\.?|d\.?\s?min\.?|m\.?d\.?|th\.?\s?d\.?|ed\.?\s?d\.?)$/i;
 
-/** Amazon's author line as names: "Nicole Forsgren PhD, Jez Humble, and Gene Kim" → three names. */
+/**
+ * An author line as names in display order. Amazon writes "Nicole Forsgren PhD, Jez Humble,
+ * and Gene Kim"; `My Clippings.txt` and sideloaded books often write "Lewis, C. S." or
+ * "Forsgren, Nicole;Humble, Jez". A line with ";" is split there alone, and "Surname, Given"
+ * (a one-word surname before the only comma) is one inverted name.
+ */
 export function kindleAuthors(author: string): string[] {
-	return author
-		.split(/\s*;\s*|\s*,\s*(?:and\s+)?|\s+and\s+|\s*&\s*/i)
+	const line = author.trim();
+	const parts = line.includes(";")
+		? line.split(/\s*;\s*/)
+		: /^[^\s,]+,\s*[^,]+$/.test(line) && !/\s(?:and|&)\s/i.test(line)
+			? [line]
+			: line.split(/\s*,\s*(?:and\s+)?|\s+and\s+|\s*&\s*/i);
+	return parts
 		.map((a) => a.replace(DEGREE, "").replace(DEGREE, "").trim())
-		.filter((a) => a && !/^(?:ph\.?\s?d\.?|m\.?d\.?|jr\.?|sr\.?)$/i.test(a));
+		.filter((a) => a && !/^(?:ph\.?\s?d\.?|m\.?d\.?|jr\.?|sr\.?)$/i.test(a))
+		.map((a) => (a.includes(",") ? displayName(parseName(a)) : a));
 }
 
 /** A reference made from what the Kindle plugin knows, when no catalog has the book. */
@@ -52,19 +64,47 @@ export function fromKindle(book: KindleBook): ReferenceData {
 	return { type: "book", title: book.title, authors, familyNames: authors.map(familyFromFullName), source: "the Kindle plugin" };
 }
 
-/** The part of a title before its subtitle, for comparing. */
-const mainTitle = (t: string) => normalizeTitle(t.split(/\s*:\s+/)[0] ?? "");
+/**
+ * The part of a title before its subtitle, for comparing, without a series or edition name in
+ * trailing parentheses: "Mistborn (The Mistborn Saga Book 1)", "Mere Christianity (C.S. Lewis
+ * Signature Classics)".
+ */
+const mainTitle = (t: string) => normalizeTitle(t.replace(/(?:\s*\([^()]*\))+\s*$/, "").split(/\s*:\s+/)[0] ?? "");
+
+const NUMBER_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const ROMAN = /^(?=[ivxlc]+$)c{0,3}(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/i;
+
+function romanValue(s: string): number {
+	const v: Record<string, number> = { i: 1, v: 5, x: 10, l: 50, c: 100 };
+	let total = 0;
+	const chars = s.toLowerCase().split("");
+	chars.forEach((c, i) => (total += v[c] < (v[chars[i + 1]] ?? 0) ? -v[c] : v[c]));
+	return total;
+}
+
+/** The volume, part or book number a title names ("Volume 2", "Vol. II", "Book One"), if any. */
+export function volumeOf(title: string): number | undefined {
+	const m = title.match(/\b(?:vol(?:ume)?|part|book|bk|tome)\.?\s+(\d+|[ivxlc]+|[a-z]+)\b/i);
+	if (!m) return undefined;
+	const n = m[1].toLowerCase();
+	if (/^\d+$/.test(n)) return Number(n);
+	if (NUMBER_WORDS.includes(n)) return NUMBER_WORDS.indexOf(n);
+	return ROMAN.test(n) ? romanValue(n) : undefined;
+}
 
 /**
  * True when a reference with this title and these authors is the Kindle book: the same title
- * before any subtitle (Amazon adds subtitles and series names), and the Kindle book's first
- * author among the reference's family names. A Kindle edition's ISBN usually isn't the print
- * edition's, so identifiers alone miss it.
+ * before any subtitle or parenthesized series name (Amazon adds both), and the Kindle book's
+ * first author among the reference's family names. Two titles that each name a different
+ * volume, part or book number are different books. A Kindle edition's ISBN usually isn't the
+ * print edition's, so identifiers alone miss it.
  */
 export function sameBook(book: Pick<KindleBook, "title" | "author">, title: string, families: string[]): boolean {
 	const want = mainTitle(book.title);
 	const first = kindleAuthors(book.author)[0];
 	if (!want || !first || mainTitle(title) !== want) return false;
+	const [va, vb] = [volumeOf(book.title), volumeOf(title)];
+	if (va !== undefined && vb !== undefined && va !== vb) return false;
 	const fam = normalizeTitle(familyFromFullName(first));
 	return families.some((f) => normalizeTitle(f) === fam);
 }

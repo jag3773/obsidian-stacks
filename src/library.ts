@@ -259,7 +259,9 @@ export class Library {
 	 * Take a Kindle note's book into an existing reference: its `kindle-*` properties (the
 	 * Kindle plugin finds its notes by them) and the highlights the reference lacks. The
 	 * reference moves into the Kindle note's folder, the only place the Kindle plugin looks on
-	 * its next sync, and the Kindle note goes to the trash. Call inside exclusive().
+	 * its next sync, unless that folder is outside the references folder: there it would stop
+	 * being a reference, so it stays put. The Kindle note goes to the trash. Call inside
+	 * exclusive().
 	 */
 	async adoptKindleNote(kindleNote: TFile, ref: TFile): Promise<TFile> {
 		this.assertActive();
@@ -274,8 +276,9 @@ export class Library {
 			return merged === null ? text : frontmatter + merged;
 		});
 		const folder = kindleNote.parent?.path ?? this.s.referencesFolder;
+		const inLibrary = this.isReference(kindleNote);
 		await this.app.fileManager.trashFile(kindleNote);
-		if (ref.parent?.path !== folder) await this.moveTo(ref, folder, ref.basename);
+		if (inLibrary && ref.parent?.path !== folder) await this.moveTo(ref, folder, ref.basename);
 		return ref;
 	}
 

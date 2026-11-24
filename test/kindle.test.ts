@@ -187,3 +187,100 @@ test("a note outside the references folder, or one the Kindle plugin didn't writ
 	assert.equal(http.calls.length, 0);
 	plugin.unload();
 });
+
+// From the review of #61 ------------------------------------------------------------------------
+
+test("different volumes of one work aren't the same book; the same volume, written another way, is", () => {
+	const v2 = { title: "Systematic Theology: Volume 2", author: "Wolfhart Pannenberg" };
+	assert.ok(!sameBook(v2, "Systematic Theology: Volume 1", ["Pannenberg"]));
+	assert.ok(sameBook(v2, "Systematic theology: Vol. II", ["Pannenberg"]));
+	assert.ok(sameBook({ title: "The Lord of the Rings (Book Two)", author: "J. R. R. Tolkien" }, "The Lord of the Rings: Book 2", ["Tolkien"]));
+	assert.ok(sameBook(v2, "Systematic Theology", ["Pannenberg"]), "only one side names a volume");
+	assert.ok(sameBook({ title: "The Book of Revelation", author: "Richard Bauckham" }, "The Book of Revelation", ["Bauckham"]), "'Book of' isn't a book number");
+});
+
+test("Amazon's series and edition names in parentheses are left out of the title compared", () => {
+	assert.ok(sameBook({ title: "Mistborn (The Mistborn Saga Book 1)", author: "Brandon Sanderson" }, "Mistborn: The Final Empire", ["Sanderson"]));
+	assert.ok(sameBook({ title: "Mere Christianity (C.S. Lewis Signature Classics)", author: "C. S. Lewis" }, "Mere Christianity", ["Lewis"]));
+});
+
+test("'Surname, Given' author lines, as in My Clippings, are names in display order", () => {
+	assert.deepEqual(kindleAuthors("Lewis, C. S."), ["C. S. Lewis"]);
+	assert.deepEqual(kindleAuthors("Forsgren, Nicole;Humble, Jez"), ["Nicole Forsgren", "Jez Humble"]);
+	assert.deepEqual(kindleAuthors("Jez Humble, Gene Kim"), ["Jez Humble", "Gene Kim"], "two names in display order are still two");
+});
+
+test("a Kindle note isn't completed from Kindle's own details when the catalogs couldn't be reached", async () => {
+	const { app, plugin } = await setupPlugin();
+	http.handler = async () => {
+		throw new Error("net::ERR_INTERNET_DISCONNECTED");
+	};
+	const note = app.vault.addFile("References/Kindle/Accelerate.md", kindleNote({ isbn: "9781942788331" }));
+	await flush();
+	await plugin.completeFromProperties(note, false);
+	await flush();
+	assert.equal(note.path, "References/Kindle/Accelerate.md", "left as it was");
+	assert.equal(fm(app, note).citekey, undefined, "so a later run still completes it");
+	assert.match(Notice.messages.at(-1) ?? "", /couldn't look up Accelerate/);
+	plugin.unload();
+});
+
+test("a rate-limited title search leaves a Kindle note for later rather than settling it", async () => {
+	const { app, plugin } = await setupPlugin();
+	http.handler = async ({ url }) => (url.startsWith("https://openlibrary.org/search.json") ? { status: 429, text: "" } : { status: 404, text: "" });
+	const note = app.vault.addFile("References/Kindle/Accelerate.md", kindleNote());
+	await flush();
+	await plugin.completeFromProperties(note, false);
+	await flush();
+	assert.equal(fm(app, note).citekey, undefined);
+	plugin.unload();
+});
+
+test("Kindle notes are looked up one at a time", async () => {
+	const { app, plugin } = await setupPlugin();
+	let inFlight = 0;
+	let most = 0;
+	http.handler = async () => {
+		inFlight++;
+		most = Math.max(most, inFlight);
+		await new Promise((r) => setImmediate(r));
+		inFlight--;
+		return { status: 404, text: "" };
+	};
+	const a = app.vault.addFile("References/Kindle/A.md", kindleNote().replace("B07B9F83WM-1", "A-1").replace(/Accelerate: The Science[^"]*/, "Alpha Book"));
+	const b = app.vault.addFile("References/Kindle/B.md", kindleNote().replace("B07B9F83WM-1", "B-1").replace(/Accelerate: The Science[^"]*/, "Beta Book"));
+	await flush();
+	await Promise.all([plugin.completeFromProperties(a, false), plugin.completeFromProperties(b, false)]);
+	await flush();
+	assert.equal(most, 1);
+	assert.ok(fm(app, a).citekey && fm(app, b).citekey, "both completed");
+	plugin.unload();
+});
+
+test("Complete current reference on a Kindle note outside the library leaves the existing reference in it", async () => {
+	const { app, plugin } = await setupPlugin();
+	const ref = app.vault.addFile(
+		"References/forsgrenAccelerate2018.md",
+		`---\n${JSON.stringify({ citekey: "forsgrenAccelerate2018", title: "Accelerate", authors: ["[[Nicole Forsgren]]"] })}\n---\n`
+	);
+	const note = app.vault.addFile("Kindle/Accelerate.md", kindleNote());
+	await flush();
+	await plugin.completeFromProperties(note, true);
+	await flush();
+	assert.equal(ref.path, "References/forsgrenAccelerate2018.md", "still in the references folder");
+	assert.equal(fm(app, ref)["kindle-bookId"], "B07B9F83WM-1");
+	assert.equal(app.vault.getAbstractFileByPath("Kindle/Accelerate.md"), null);
+	assert.match(Notice.messages.at(-1) ?? "", /outside References.*won't find it/);
+	plugin.unload();
+});
+
+test("Complete current reference on a new Kindle note outside the library says it leaves the Kindle folder", async () => {
+	const { app, plugin } = await setupPlugin();
+	const note = app.vault.addFile("Kindle/Accelerate.md", kindleNote());
+	await flush();
+	await plugin.completeFromProperties(note, true);
+	await flush();
+	assert.match(note.path, /^References\/forsgrenAccelerate/);
+	assert.match(Notice.messages.at(-1) ?? "", /out of the Kindle plugin's folder/);
+	plugin.unload();
+});
