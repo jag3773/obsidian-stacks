@@ -34,7 +34,7 @@ Drop a file in your inbox folder and Stacks identifies it, creates its reference
 
 | Format | Extensions | What Stacks reads |
 |---|---|---|
-| PDF | `.pdf` | A DOI, ISBN or PubMed ID in the first pages; the document's title and author |
+| PDF | `.pdf` | A DOI, ISBN or PubMed ID in the first pages; the document's title and author. When the document names no author, the byline in its title block: a line of names next to a line that is only a date, or a line starting "By". For a web page printed from a browser (Chrome, Edge, Safari, Firefox), the page's URL from the browser's footer and the print date as `accessed` |
 | EPUB, including Kobo | `.epub`, `.kepub`, `.kepub.epub` | The book's ISBN, title, authors (not translators or editors), publisher, date, language and description from its package metadata; an ISBN on the copyright page when the metadata has none |
 | Kindle | `.mobi`, `.azw`, `.azw3`, `.prc` | The ISBN, title, authors, publisher, date, language and description in the book's header. It isn't encrypted, so books with DRM are identified too |
 | Word | `.docx` | The document's title and author, and a DOI, ISBN or PubMed ID in its text |

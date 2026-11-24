@@ -9,6 +9,7 @@ import { truncated } from "./metadata/found";
 import { fillGaps, lookup, lookupBookByTitle } from "./metadata/lookup";
 import { ReferenceData } from "./metadata/types";
 import { readPdf } from "./pdf";
+import { readFront } from "./pdfFront";
 import { PropertyKey } from "./properties";
 import { LibrarySettings } from "./settings";
 import { NetworkTracker, looksComplete } from "./sync";
@@ -103,8 +104,11 @@ export class Inbox {
 		try {
 			if (format !== "pdf") return await readFile(format, bytes);
 			const pdf = await readPdf(this.app, file);
-			const authors = pdf.author ? pdf.author.split(/\s*(?:;|,| and )\s*/).filter(Boolean) : [];
-			return { identifiers: [], text: pdf.text, title: pdf.title, authors, book: false };
+			// The first page fills what the metadata leaves out: the byline, and for a page
+			// printed from a browser, its URL and print date.
+			const front = readFront(pdf.lines, pdf);
+			const authors = pdf.author ? pdf.author.split(/\s*(?:;|,| and )\s*/).filter(Boolean) : front.authors;
+			return { identifiers: [], text: pdf.text, title: pdf.title, authors, date: front.date, url: front.url, accessed: front.accessed, book: false };
 		} catch (e) {
 			console.warn(`[stacks] could not read ${FORMAT_LABELS[format]}`, file.path, e);
 			return null;
@@ -259,6 +263,8 @@ export function fromFile(info: FileInfo | null, fallbackTitle: string, source: s
 		abstract: info?.description,
 		isbn,
 		doi,
+		url: info?.url,
+		accessed: info?.accessed,
 		source,
 	};
 }
@@ -279,5 +285,7 @@ export function fillFromFile(found: ReferenceData, info: FileInfo | null): Refer
 	out.publisher ??= own.publisher;
 	out.language ??= own.language;
 	out.abstract ??= own.abstract;
+	out.url ??= own.url;
+	out.accessed ??= own.accessed;
 	return out;
 }

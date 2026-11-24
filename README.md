@@ -39,7 +39,7 @@ Not every library is a folder of PDFs. Yours might be ebooks bought over the yea
 
 | Drop in | Stacks reads |
 |---|---|
-| **PDF** | A DOI, ISBN or PubMed ID in the first pages, and the document's title and author |
+| **PDF** | A DOI, ISBN or PubMed ID in the first pages, and the document's title and author; without them, the byline under the title (author and date), and for a web page printed from a browser, its URL and the day it was printed |
 | **EPUB**, including **Kobo** `.kepub` | The book's own ISBN, title, authors, publisher and date, or the ISBN on its copyright page |
 | **Kindle** `.mobi`, `.azw`, `.azw3` | The ISBN, title, authors, publisher and date in the book's header, which is readable even when the book has DRM |
 | **Word** `.docx` and **OpenDocument** `.odt` | The title and author, and a DOI or ISBN in the text |

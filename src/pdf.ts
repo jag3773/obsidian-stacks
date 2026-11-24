@@ -1,5 +1,6 @@
 import { App, TFile, loadPdfJs } from "obsidian";
 import { ExtractResult, PdfDocumentLike, PdfOps, collectAnnotations } from "./annotations";
+import { PdfLine } from "./pdfFront";
 
 /** The parts of PDF.js (Obsidian's loadPdfJs) this plugin uses. */
 interface PdfDocument extends PdfDocumentLike {
@@ -16,6 +17,42 @@ export interface PdfInfo {
 	text: string;
 	title?: string;
 	author?: string;
+	/** The first page's lines, with their font sizes. */
+	lines: PdfLine[];
+	creator?: string;
+	/** /CreationDate as written. */
+	created?: string;
+}
+
+interface TextItem {
+	str?: string;
+	hasEOL?: boolean;
+	transform?: number[];
+}
+
+/** A page's text items as lines: PDF.js marks each line's end (hasEOL). */
+export function pageLines(items: unknown[]): PdfLine[] {
+	const lines: PdfLine[] = [];
+	let cur: PdfLine = { text: "", size: 0, y: 0 };
+	const end = () => {
+		cur.text = cur.text.replace(/\s+/g, " ").trim();
+		if (cur.text) lines.push(cur);
+		cur = { text: "", size: 0, y: 0 };
+	};
+	for (const raw of items) {
+		const it = raw as TextItem;
+		if (typeof it.str !== "string") continue;
+		if (it.str.trim()) {
+			const [a = 0, b = 0, , d = 0, , y = 0] = it.transform ?? [];
+			const size = Math.abs(d) || Math.hypot(a, b);
+			if (!cur.text.trim()) cur.y = y;
+			cur.size = Math.max(cur.size, size);
+		}
+		cur.text += it.str;
+		if (it.hasEOL) end();
+	}
+	end();
+	return lines;
 }
 
 /** Read the opening pages and document metadata with Obsidian's bundled PDF.js. */
@@ -27,14 +64,17 @@ export async function readPdf(app: App, file: TFile, pages = 3): Promise<PdfInfo
 	const doc = await pdfjs.getDocument({ data: new Uint8Array(data), isEvalSupported: false, enableScripting: false }).promise;
 	try {
 		const parts: string[] = [];
+		let lines: PdfLine[] = [];
 		for (let i = 1; i <= Math.min(pages, doc.numPages); i++) {
 			const page = await doc.getPage(i);
 			const content = await page.getTextContent();
 			parts.push(content.items.map((it) => (it as { str?: string }).str ?? "").join(" "));
+			if (i === 1) lines = pageLines(content.items);
 		}
 		const meta = await doc.getMetadata().catch(() => null);
-		const info = (meta?.info ?? {}) as { Title?: string; Author?: string };
-		return { text: parts.join("\n"), title: info.Title?.trim() || undefined, author: info.Author?.trim() || undefined };
+		const info = (meta?.info ?? {}) as { Title?: string; Author?: string; Creator?: string; CreationDate?: string };
+		const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
+		return { text: parts.join("\n"), title: str(info.Title), author: str(info.Author), lines, creator: str(info.Creator), created: str(info.CreationDate) };
 	} finally {
 		await doc.destroy();
 	}

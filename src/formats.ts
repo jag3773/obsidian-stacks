@@ -56,6 +56,9 @@ export interface FileInfo {
 	publisher?: string;
 	language?: string;
 	description?: string;
+	/** The web page a browser printed this file from, and the day it did. */
+	url?: string;
+	accessed?: string;
 	/** True for ebooks: a reference made from the file alone is a book. */
 	book: boolean;
 }
