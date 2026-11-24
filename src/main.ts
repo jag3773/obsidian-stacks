@@ -7,7 +7,8 @@ import { Identifier, detectIdentifier } from "./identifiers";
 import { Inbox } from "./inbox";
 import { Cancelled, Library } from "./library";
 import { Fetcher } from "./metadata/http";
-import { lookup } from "./metadata/lookup";
+import { lookup, lookupBookByTitle } from "./metadata/lookup";
+import { fromKindle, kindleAuthors, kindleBook } from "./kindle";
 import { Host, RoundTrip, runPreExtraction, toArrayBuffer } from "./roundtrip";
 import { LibrarySettingTab, LibrarySettings, basePath, reloadedSettings, withDefaults } from "./settings";
 import { AddReferenceModal } from "./ui/AddReferenceModal";
@@ -27,6 +28,7 @@ import { asText } from "./text";
 import { Citations } from "./citations";
 import { registerMaintenanceCommands } from "./maintenanceCommands";
 import { registerBatchCommands } from "./batchCommands";
+import { NetworkTracker } from "./sync";
 
 const PREFIX = "Stacks";
 const COMPLETE_DEBOUNCE_MS = 2000;
@@ -68,7 +70,9 @@ export default class LibraryPlugin extends Plugin {
 	/** Every pending timeout, so unload can cancel them. */
 	private timers = new Set<number>();
 	/** Pending automatic completions by path, with the identifier they were scheduled for. */
-	private completeTimers = new Map<string, { timer: number; id: Identifier }>();
+	private completeTimers = new Map<string, { timer: number; id: Identifier | null }>();
+	/** Kindle notes being completed, one after another. */
+	private kindleQueue: Promise<void> = Promise.resolve();
 	/** Last seen status of each reference note, to notice a change to the send status. */
 	private statuses = new Map<string, string>();
 	/** Pending inbox processing by path, restarted while a file keeps changing. */
@@ -514,16 +518,18 @@ export default class LibraryPlugin extends Plugin {
 	/**
 	 * Whether automatic completion may still act on the file for the identifier it was
 	 * scheduled with: plugin loaded, option on, file still in the vault and in the references
-	 * folder, no citekey yet, and the same identifier.
+	 * folder, no citekey yet, and the same identifier. A note the Kindle plugin wrote is
+	 * completed without one, by its book's title and author.
 	 */
 	private autoEligible(file: TFile, id: Identifier | null): boolean {
+		const now = this.library.identifierOf(file);
 		return (
 			this.alive &&
 			this.settings.completeOnPropertyEdit &&
 			this.library.exists(file) &&
 			this.library.isReference(file) &&
 			!this.library.citekeyOf(file) &&
-			sameId(this.library.identifierOf(file), id)
+			(id ? sameId(now, id) : !now && !!kindleBook(this.library.frontmatter(file)))
 		);
 	}
 
@@ -538,9 +544,9 @@ export default class LibraryPlugin extends Plugin {
 		const timer = this.later(() => {
 			this.completeTimers.delete(path);
 			if (file.path !== path) return;
-			void this.completeFromProperties(file, false, id as Identifier);
+			void this.completeFromProperties(file, false, id);
 		}, COMPLETE_DEBOUNCE_MS);
-		this.completeTimers.set(path, { timer, id: id as Identifier });
+		this.completeTimers.set(path, { timer, id });
 	}
 
 	/**
@@ -548,32 +554,72 @@ export default class LibraryPlugin extends Plugin {
 	 * automatic completion, which revalidates eligibility before the request and again before
 	 * writing, since the note may have moved, gained a citekey or changed meanwhile.
 	 */
-	async completeFromProperties(file: TFile, explicit: boolean, scheduled?: Identifier): Promise<void> {
+	async completeFromProperties(file: TFile, explicit: boolean, scheduled?: Identifier | null): Promise<void> {
 		const id = this.library.identifierOf(file);
-		if (!id) {
+		const kindle = kindleBook(this.library.frontmatter(file));
+		if (!id && !kindle) {
 			// No identifier: name it from its own properties, with no network request (#16).
 			if (explicit) await this.completeLocally(file);
 			return;
 		}
-		if (!explicit && !this.autoEligible(file, scheduled ?? id)) return;
-		await this.guard(file, async () => {
-			const data = await lookup(this.fetcher, id, { crossrefMailto: this.settings.crossrefMailto });
-			if (!data) {
-				new Notice(`${PREFIX}: nothing found for ${id.value}.`);
-				return;
-			}
-			await this.library.exclusive(async () => {
-				if (!this.library.exists(file)) return;
-				if (explicit ? !sameId(this.library.identifierOf(file), id) : !this.autoEligible(file, id)) return;
-				const dup = this.library.findExisting(data, file);
-				if (dup && !explicit) {
-					new Notice(`${PREFIX}: ${id.value} is already in your library as ${dup.basename}.`);
+		if (!explicit && !this.autoEligible(file, scheduled === undefined ? id : scheduled)) return;
+		const work = () =>
+			this.guard(file, async () => {
+				const opts = { crossrefMailto: this.settings.crossrefMailto };
+				const net = new NetworkTracker();
+				const fetch = net.wrap(this.fetcher);
+				let data = id ? await lookup(fetch, id, opts) : null;
+				if (kindle) {
+					// A Kindle book with no identifier, or one no catalog knows: its title and author.
+					if (!data || (!data.isbn && !data.date)) data = (await lookupBookByTitle(fetch, kindle.title, kindleAuthors(kindle.author), opts)) ?? data;
+					// A request that failed or was told to wait isn't "not found": completing now
+					// would settle the note on Amazon's title for good. Leave it for a later try.
+					if (!data?.isbn && !data?.date && net.incomplete) {
+						new Notice(`${PREFIX}: couldn't look up ${kindle.title} (offline, or the catalog asked to wait). Left as it is; run Complete current reference on it later.`);
+						return;
+					}
+					data ??= fromKindle(kindle);
+				}
+				if (!data) {
+					new Notice(`${PREFIX}: nothing found for ${id?.value ?? file.basename}.`);
 					return;
 				}
-				const moved = await this.library.complete(file, data, this.settings.defaultStatus);
-				new Notice(`${PREFIX}: completed ${moved.basename} (from ${data.source}).`);
+				const found = data;
+				await this.library.exclusive(async () => {
+					if (!this.library.exists(file)) return;
+					// The identifier it was looked up by is still the note's (or it still has none).
+					const now = this.library.identifierOf(file);
+					const unchanged = id ? sameId(now, id) : !now;
+					if (explicit ? !unchanged : !this.autoEligible(file, scheduled === undefined ? id : scheduled)) return;
+					const inLibrary = this.library.isReference(file);
+					const dup = this.library.findExisting(found, file) ?? (kindle ? this.library.findSameBook(kindle, file) : null);
+					// The Kindle plugin's note for a book already in the library: its highlights go into
+					// that reference, which moves into the Kindle plugin's folder so later syncs find it.
+					if (dup && kindle) {
+						const kept = await this.library.adoptKindleNote(file, dup);
+						new Notice(
+							`${PREFIX}: added the Kindle highlights for ${kindle.title} to ${kept.basename}.` +
+								(inLibrary ? "" : ` The Kindle note was outside ${this.settings.referencesFolder}, so ${kept.basename} stays where it is and the Kindle plugin won't find it on its next sync.`)
+						);
+						return;
+					}
+					if (dup && !explicit) {
+						new Notice(`${PREFIX}: ${id?.value ?? found.title} is already in your library as ${dup.basename}.`);
+						return;
+					}
+					const moved = await this.library.complete(file, found, this.settings.defaultStatus);
+					new Notice(
+						`${PREFIX}: completed ${moved.basename} (from ${found.source}).` +
+							(kindle && !inLibrary ? ` It moved into ${this.settings.referencesFolder}, out of the Kindle plugin's folder, so the Kindle plugin will write a new note for it on its next sync.` : "")
+					);
+				});
 			});
-		});
+		if (!kindle) return work();
+		// A first Kindle sync writes many notes at once: look them up one at a time, so the
+		// catalogs aren't asked for all of them together.
+		const next = this.kindleQueue.then(work, work);
+		this.kindleQueue = next.catch(() => undefined);
+		await next;
 	}
 
 	/** Export soon, once edits settle; each change restarts the wait. Only when auto-export is on. */

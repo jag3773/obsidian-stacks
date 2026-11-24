@@ -240,7 +240,7 @@ const FENCE = /^ {0,3}(`{3,}|~{3,})/;
  * Blocks separated by blank lines. A fenced code block is never split, so its blank lines
  * and "#" lines stay inside it; a fence left open runs to the end, as in CommonMark.
  */
-function paragraphs(s: string): string[] {
+export function paragraphs(s: string): string[] {
 	const out: string[] = [];
 	let lines: string[] = [];
 	let fence = "";

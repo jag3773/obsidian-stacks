@@ -10,6 +10,8 @@ import { FIELD_LABELS, PEOPLE_KEYS, PeopleKey, TEXT_KEYS } from "./properties";
 import { LibrarySettings, PropertyKey } from "./settings";
 import { DEFAULT_TEMPLATE, escapeMarkdown, markdownSafeUrl, renderTemplate, safeFilename } from "./template";
 import { asText, localDate } from "./text";
+import { splitNote } from "./duplicates";
+import { KindleBook, addKindleHighlights, kindleProperties, sameBook } from "./kindle";
 
 type Frontmatter = Record<string, unknown>;
 
@@ -237,6 +239,47 @@ export class Library {
 			if (sameIdentity(want, this.noteIdentity(this.frontmatter(f)))) return f;
 		}
 		return null;
+	}
+
+	/**
+	 * A reference for the same book as a Kindle note, matched by title and author: a Kindle
+	 * edition's ISBN usually isn't that of the edition already in the library.
+	 */
+	findSameBook(book: Pick<KindleBook, "title" | "author">, except?: TFile): TFile | null {
+		for (const f of this.referenceFiles()) {
+			// Only completed references: another Kindle note still waiting is not a match.
+			if (f === except || !this.citekeyOf(f)) continue;
+			const { title, familyNames } = this.keyInputsFromNote(f);
+			if (sameBook(book, title ?? "", familyNames)) return f;
+		}
+		return null;
+	}
+
+	/**
+	 * Take a Kindle note's book into an existing reference: its `kindle-*` properties (the
+	 * Kindle plugin finds its notes by them) and the highlights the reference lacks. The
+	 * reference moves into the Kindle note's folder, the only place the Kindle plugin looks on
+	 * its next sync, unless that folder is outside the references folder: there it would stop
+	 * being a reference, so it stays put. The Kindle note goes to the trash. Call inside
+	 * exclusive().
+	 */
+	async adoptKindleNote(kindleNote: TFile, ref: TFile): Promise<TFile> {
+		this.assertActive();
+		const { frontmatter: fmText, body: kindleBody } = splitNote(await this.app.vault.read(kindleNote));
+		const info = getFrontMatterInfo(fmText);
+		const parsed: unknown = info.exists ? parseYaml(info.frontmatter) : null;
+		const props = kindleProperties(parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Frontmatter) : {});
+		await this.app.fileManager.processFrontMatter(ref, (fm: Frontmatter) => Object.assign(fm, props));
+		await this.app.vault.process(ref, (text) => {
+			const { frontmatter, body } = splitNote(text);
+			const merged = addKindleHighlights(body, kindleBody);
+			return merged === null ? text : frontmatter + merged;
+		});
+		const folder = kindleNote.parent?.path ?? this.s.referencesFolder;
+		const inLibrary = this.isReference(kindleNote);
+		await this.app.fileManager.trashFile(kindleNote);
+		if (inLibrary && ref.parent?.path !== folder) await this.moveTo(ref, folder, ref.basename);
+		return ref;
 	}
 
 	/** The mapped url plus any capture-URL properties (a clip keeps its "source"). */
