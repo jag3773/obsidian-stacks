@@ -101,7 +101,7 @@ To see what Obsidian runs, temporarily set the command to something that prints 
 
 ### Kindle and other sources
 
-Kindle highlights aren't in a PDF. Use a Kindle highlights plugin and embed its note in the reference note, for example with a line like `![[Kindle/{{citekey}}]]` in your note template.
+Kindle highlights aren't in a PDF. The Kindle Highlights plugin writes them into a note per book. Set it to write into a folder inside your references folder, and Stacks makes that note the book's reference, or adds its highlights to the reference you already have, while the Kindle plugin keeps it up to date. See [Kindle highlights](kindle.md) for the setup.
 
 ## Reading round trip with a tablet (desktop)
 

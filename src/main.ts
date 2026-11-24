@@ -7,7 +7,8 @@ import { Identifier, detectIdentifier } from "./identifiers";
 import { Inbox } from "./inbox";
 import { Cancelled, Library } from "./library";
 import { Fetcher } from "./metadata/http";
-import { lookup } from "./metadata/lookup";
+import { lookup, lookupBookByTitle } from "./metadata/lookup";
+import { fromKindle, kindleAuthors, kindleBook } from "./kindle";
 import { Host, RoundTrip, runPreExtraction, toArrayBuffer } from "./roundtrip";
 import { LibrarySettingTab, LibrarySettings, basePath, reloadedSettings, withDefaults } from "./settings";
 import { AddReferenceModal } from "./ui/AddReferenceModal";
@@ -68,7 +69,7 @@ export default class LibraryPlugin extends Plugin {
 	/** Every pending timeout, so unload can cancel them. */
 	private timers = new Set<number>();
 	/** Pending automatic completions by path, with the identifier they were scheduled for. */
-	private completeTimers = new Map<string, { timer: number; id: Identifier }>();
+	private completeTimers = new Map<string, { timer: number; id: Identifier | null }>();
 	/** Last seen status of each reference note, to notice a change to the send status. */
 	private statuses = new Map<string, string>();
 	/** Pending inbox processing by path, restarted while a file keeps changing. */
@@ -514,16 +515,18 @@ export default class LibraryPlugin extends Plugin {
 	/**
 	 * Whether automatic completion may still act on the file for the identifier it was
 	 * scheduled with: plugin loaded, option on, file still in the vault and in the references
-	 * folder, no citekey yet, and the same identifier.
+	 * folder, no citekey yet, and the same identifier. A note the Kindle plugin wrote is
+	 * completed without one, by its book's title and author.
 	 */
 	private autoEligible(file: TFile, id: Identifier | null): boolean {
+		const now = this.library.identifierOf(file);
 		return (
 			this.alive &&
 			this.settings.completeOnPropertyEdit &&
 			this.library.exists(file) &&
 			this.library.isReference(file) &&
 			!this.library.citekeyOf(file) &&
-			sameId(this.library.identifierOf(file), id)
+			(id ? sameId(now, id) : !now && !!kindleBook(this.library.frontmatter(file)))
 		);
 	}
 
@@ -538,9 +541,9 @@ export default class LibraryPlugin extends Plugin {
 		const timer = this.later(() => {
 			this.completeTimers.delete(path);
 			if (file.path !== path) return;
-			void this.completeFromProperties(file, false, id as Identifier);
+			void this.completeFromProperties(file, false, id);
 		}, COMPLETE_DEBOUNCE_MS);
-		this.completeTimers.set(path, { timer, id: id as Identifier });
+		this.completeTimers.set(path, { timer, id });
 	}
 
 	/**
@@ -548,30 +551,48 @@ export default class LibraryPlugin extends Plugin {
 	 * automatic completion, which revalidates eligibility before the request and again before
 	 * writing, since the note may have moved, gained a citekey or changed meanwhile.
 	 */
-	async completeFromProperties(file: TFile, explicit: boolean, scheduled?: Identifier): Promise<void> {
+	async completeFromProperties(file: TFile, explicit: boolean, scheduled?: Identifier | null): Promise<void> {
 		const id = this.library.identifierOf(file);
-		if (!id) {
+		const kindle = kindleBook(this.library.frontmatter(file));
+		if (!id && !kindle) {
 			// No identifier: name it from its own properties, with no network request (#16).
 			if (explicit) await this.completeLocally(file);
 			return;
 		}
-		if (!explicit && !this.autoEligible(file, scheduled ?? id)) return;
+		if (!explicit && !this.autoEligible(file, scheduled === undefined ? id : scheduled)) return;
 		await this.guard(file, async () => {
-			const data = await lookup(this.fetcher, id, { crossrefMailto: this.settings.crossrefMailto });
+			const opts = { crossrefMailto: this.settings.crossrefMailto };
+			let data = id ? await lookup(this.fetcher, id, opts) : null;
+			// A Kindle book with no identifier, or one no catalog knows: its title and author.
+			if (kindle && (!data || (!data.isbn && !data.date))) {
+				const byTitle = await lookupBookByTitle(this.fetcher, kindle.title, kindleAuthors(kindle.author), opts);
+				data = byTitle ?? data ?? fromKindle(kindle);
+			}
 			if (!data) {
-				new Notice(`${PREFIX}: nothing found for ${id.value}.`);
+				new Notice(`${PREFIX}: nothing found for ${id?.value ?? file.basename}.`);
 				return;
 			}
+			const found = data;
 			await this.library.exclusive(async () => {
 				if (!this.library.exists(file)) return;
-				if (explicit ? !sameId(this.library.identifierOf(file), id) : !this.autoEligible(file, id)) return;
-				const dup = this.library.findExisting(data, file);
-				if (dup && !explicit) {
-					new Notice(`${PREFIX}: ${id.value} is already in your library as ${dup.basename}.`);
+				// The identifier it was looked up by is still the note's (or it still has none).
+				const now = this.library.identifierOf(file);
+				const unchanged = id ? sameId(now, id) : !now;
+				if (explicit ? !unchanged : !this.autoEligible(file, scheduled === undefined ? id : scheduled)) return;
+				const dup = this.library.findExisting(found, file) ?? (kindle ? this.library.findSameBook(kindle, file) : null);
+				// The Kindle plugin's note for a book already in the library: its highlights go into
+				// that reference, which moves into the Kindle plugin's folder so later syncs find it.
+				if (dup && kindle) {
+					const kept = await this.library.adoptKindleNote(file, dup);
+					new Notice(`${PREFIX}: added the Kindle highlights for ${kindle.title} to ${kept.basename}.`);
 					return;
 				}
-				const moved = await this.library.complete(file, data, this.settings.defaultStatus);
-				new Notice(`${PREFIX}: completed ${moved.basename} (from ${data.source}).`);
+				if (dup && !explicit) {
+					new Notice(`${PREFIX}: ${id?.value ?? found.title} is already in your library as ${dup.basename}.`);
+					return;
+				}
+				const moved = await this.library.complete(file, found, this.settings.defaultStatus);
+				new Notice(`${PREFIX}: completed ${moved.basename} (from ${found.source}).`);
 			});
 		});
 	}
