@@ -388,7 +388,7 @@ export class LibrarySettingTab extends PluginSettingTab {
 		toggle("Process inbox automatically", "Handle new notes and PDFs in the inbox folder as they arrive.", () => s.processInboxAutomatically, (v) => (s.processInboxAutomatically = v));
 		toggle(
 			"Complete notes on property edit",
-			"When a note in the references folder gets an ISBN, DOI or URL and has no citekey, look it up, fill it in and rename it. Notes from the Kindle Highlights plugin are completed too, or added to the reference already there.",
+			"When a note in the references folder gets an ISBN, DOI or URL and has no citekey, or such a note is moved into it, look it up, fill it in and rename it. Notes from the Kindle Highlights plugin are completed too, or added to the reference already there.",
 			() => s.completeOnPropertyEdit,
 			(v) => (s.completeOnPropertyEdit = v)
 		);

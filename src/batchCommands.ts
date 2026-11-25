@@ -14,7 +14,7 @@ import { BatchModal } from "./ui/BatchModal";
 
 export function registerBatchCommands(plugin: LibraryPlugin, fetcher: Fetcher, settle: (path: string) => void): BatchActions {
 	const { app } = plugin;
-	const batch = new BatchActions(app, plugin.library, () => plugin.settings, fetcher, settle);
+	const batch = new BatchActions(app, plugin.library, () => plugin.settings, fetcher, settle, (file) => plugin.completeKindleNote(file));
 
 	const open = (scopes: BatchScope[], collection?: string) =>
 		new BatchModal(app, batch, scopes, {

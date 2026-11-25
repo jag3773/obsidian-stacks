@@ -4,6 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { App, Notice, TFile, http } from "obsidian";
 import { addKindleHighlights, kindleAuthors, kindleBook, sameBook } from "../src/kindle";
+import { BatchActions } from "../src/batchActions";
 import LibraryPlugin from "../src/main";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -282,5 +283,135 @@ test("Complete current reference on a new Kindle note outside the library says i
 	await flush();
 	assert.match(note.path, /^References\/forsgrenAccelerate/);
 	assert.match(Notice.messages.at(-1) ?? "", /out of the Kindle plugin's folder/);
+	plugin.unload();
+});
+
+// Moving Kindle notes in, and completing them in a batch -------------------------------------------
+
+/** Open Library's title search and record for Accelerate. */
+const accelerateByTitle = async ({ url }: { url: string }) => {
+	if (url.startsWith("https://openlibrary.org/search.json"))
+		return { status: 200, text: JSON.stringify({ docs: [{ title: "Accelerate", author_name: ["Nicole Forsgren", "Jez Humble"], isbn: ["9781942788331"] }] }) };
+	if (url.includes("openlibrary.org/api/books")) return { status: 200, text: OL_RECORD("9781942788331", "Accelerate", "2018") };
+	return { status: 404, text: "" };
+};
+
+test("a Kindle note moved into the references folder is completed once it settles", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const { app, plugin } = await setupPlugin();
+	http.handler = accelerateByTitle;
+	const note = app.vault.addFile("Resources/Kindle/Accelerate.md", kindleNote());
+	await flush();
+	t.mock.timers.tick(2000);
+	await flush(40);
+	assert.equal(http.calls.length, 0, "outside the references folder, nothing happens");
+	await app.vault.createFolder("References");
+	await app.vault.createFolder("References/Kindle");
+	await app.fileManager.renameFile(note, "References/Kindle/Accelerate.md");
+	await flush();
+	t.mock.timers.tick(2000);
+	await flush(40);
+	assert.equal(note.path, "References/Kindle/forsgrenAccelerate2018.md", "completed and renamed where it was moved to");
+	assert.equal(fm(app, note).isbn, "9781942788331");
+	const calls = http.calls.length;
+	t.mock.timers.tick(2000);
+	await flush(40);
+	assert.equal(http.calls.length, calls, "its own rename to the citekey isn't completed again");
+	plugin.unload();
+});
+
+test("a note moved into the references folder isn't completed when automatic completion is off", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const { app, plugin } = await setupPlugin();
+	plugin.settings.completeOnPropertyEdit = false;
+	const note = app.vault.addFile("Resources/Kindle/Accelerate.md", kindleNote());
+	await flush();
+	await app.vault.createFolder("References");
+	await app.vault.createFolder("References/Kindle");
+	await app.fileManager.renameFile(note, "References/Kindle/Accelerate.md");
+	await flush();
+	t.mock.timers.tick(2000);
+	await flush(40);
+	assert.equal(note.path, "References/Kindle/Accelerate.md");
+	assert.equal(http.calls.length, 0);
+	plugin.unload();
+});
+
+function batchFor(app: App, plugin: LibraryPlugin) {
+	return new BatchActions(app as any, plugin.library, () => plugin.settings, (plugin as any).fetcher, () => undefined, (f) => plugin.completeKindleNote(f));
+}
+
+test("Complete metadata in a batch looks up a Kindle note with no ISBN or title by its Kindle title and author", async () => {
+	const { app, plugin } = await setupPlugin();
+	http.handler = accelerateByTitle;
+	plugin.settings.completeOnPropertyEdit = false;
+	const note = app.vault.addFile("References/Kindle/Accelerate.md", kindleNote());
+	await flush();
+	const batch = batchFor(app, plugin);
+	const plan = batch.plan([note], { kind: "complete" });
+	assert.equal(plan.skipped.length, 0, "not skipped for having no ISBN or title");
+	assert.equal(await batch.apply(note, { kind: "complete" }), true);
+	await flush();
+	assert.equal(note.path, "References/Kindle/forsgrenAccelerate2018.md");
+	assert.equal(fm(app, note).isbn, "9781942788331");
+	plugin.unload();
+});
+
+test("Complete metadata in a batch puts a Kindle note's highlights into the reference already there", async () => {
+	const { app, plugin } = await setupPlugin();
+	plugin.settings.completeOnPropertyEdit = false;
+	const ref = app.vault.addFile(
+		"References/forsgrenAccelerate2018.md",
+		`---\n${JSON.stringify({ citekey: "forsgrenAccelerate2018", title: "Accelerate: the science behind DevOps", authors: ["[[Nicole Forsgren]]"] })}\n---\nMy notes.\n`
+	);
+	await app.vault.createFolder("References/Kindle");
+	const note = app.vault.addFile("References/Kindle/Accelerate.md", kindleNote());
+	await flush();
+	assert.equal(await batchFor(app, plugin).apply(note, { kind: "complete" }), true);
+	await flush();
+	assert.equal(app.vault.getAbstractFileByPath("References/Kindle/Accelerate.md"), null, "the Kindle note went to the trash");
+	assert.equal(ref.path, "References/Kindle/forsgrenAccelerate2018.md");
+	assert.equal(fm(app, ref)["kindle-bookId"], "B07B9F83WM-1");
+	assert.match(await app.vault.read(ref), /My notes\.\n\n## Kindle highlights/);
+	plugin.unload();
+});
+
+test("Complete metadata in a batch reports a Kindle note it couldn't look up, and leaves it as it is", async () => {
+	const { app, plugin } = await setupPlugin();
+	plugin.settings.completeOnPropertyEdit = false;
+	http.handler = async () => {
+		throw new Error("net::ERR_INTERNET_DISCONNECTED");
+	};
+	const note = app.vault.addFile("References/Kindle/Accelerate.md", kindleNote());
+	await flush();
+	await assert.rejects(batchFor(app, plugin).apply(note, { kind: "complete" }), /couldn't reach the catalogs/);
+	assert.equal(note.path, "References/Kindle/Accelerate.md");
+	assert.equal(fm(app, note).citekey, undefined);
+	plugin.unload();
+});
+
+test("notes with an ISBN moved into the references folder together are looked up one at a time", async (t) => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	const { app, plugin } = await setupPlugin();
+	let inFlight = 0;
+	let most = 0;
+	http.handler = async () => {
+		inFlight++;
+		most = Math.max(most, inFlight);
+		await new Promise((r) => setImmediate(r));
+		inFlight--;
+		return { status: 404, text: "" };
+	};
+	const a = app.vault.addFile("Elsewhere/A.md", `---\n{"isbn":"9781942788331"}\n---\n`);
+	const b = app.vault.addFile("Elsewhere/B.md", `---\n{"isbn":"9780060652920"}\n---\n`);
+	await flush();
+	await app.vault.createFolder("References");
+	await app.fileManager.renameFile(a, "References/A.md");
+	await app.fileManager.renameFile(b, "References/B.md");
+	await flush();
+	t.mock.timers.tick(2000);
+	await flush(80);
+	assert.ok(http.calls.length >= 2, "both were looked up");
+	assert.equal(most, 1);
 	plugin.unload();
 });
