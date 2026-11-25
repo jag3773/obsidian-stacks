@@ -49,7 +49,7 @@ Batch edits change many reference notes at once:
 - **Set status**
 - **Add to collection** and **Remove from collection** (the link is matched by the note it resolves to, so `[[Climate]]` and `[[Topics/Climate|Climate]]` count as the same collection)
 - **Regenerate citekeys** (notes named by their citekey are renamed, and links to them are updated)
-- **Complete metadata** (each note with an ISBN, DOI or URL is looked up online, one at a time; only empty properties are filled, as with **Complete current reference**)
+- **Complete metadata** (each note with an ISBN, DOI or URL is looked up online, one at a time; only empty properties are filled, as with **Complete current reference**. A note from the Kindle Highlights plugin is looked up by its title and author when it has no ISBN, and its highlights go into the reference already in your library; see [Kindle highlights](kindle.md))
 
 Every batch opens a preview first. It names the scope, counts the notes, lists the ones that will be processed and the ones left alone with the reason (already that status, not in the references folder, no identifier…). Nothing is written until you press **Apply**. Writes go through Obsidian's frontmatter API, one note at a time; note bodies are never touched. While a batch runs you see its progress and can press **Stop** (or close the dialog), which stops after the note in progress. At the end, any note that failed is listed with its error, and the rest of the batch still ran.
 

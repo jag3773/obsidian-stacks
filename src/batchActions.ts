@@ -5,6 +5,7 @@
 
 import { App, TFile, TFolder } from "obsidian";
 import { BatchAction, BatchPlan, Same, applyToFrontmatter, linkTarget, linkedFrom, linkingTo, planBatch, propertySkipReason, sameLinkTarget } from "./batch";
+import { kindleBook } from "./kindle";
 import { Library } from "./library";
 import { Fetcher } from "./metadata/http";
 import { lookup } from "./metadata/lookup";
@@ -25,7 +26,12 @@ export class BatchActions {
 		private settings: () => LibrarySettings,
 		private fetch: Fetcher,
 		/** Mark a path as written by the plugin, so its own handlers don't react. */
-		private settle: (path: string) => void
+		private settle: (path: string) => void,
+		/**
+		 * Complete a Kindle Highlights note: look it up by its title and author when it has no
+		 * identifier, and put its highlights into the reference already in the library.
+		 */
+		private completeKindle?: (file: TFile) => Promise<boolean>
 	) {}
 
 	private props() {
@@ -99,6 +105,7 @@ export class BatchActions {
 				return undefined;
 			case "complete": {
 				if (this.library.identifierOf(file)) return undefined;
+				if (this.completeKindle && kindleBook(this.library.frontmatter(file))) return undefined;
 				const title = asText(this.library.frontmatter(file)[this.library.prop("title")]).trim();
 				return title ? undefined : "no ISBN, DOI, URL or title";
 			}
@@ -146,6 +153,7 @@ export class BatchActions {
 
 	/** Fill and rename one note from its identifier, or from its own properties without one. */
 	private async complete(file: TFile): Promise<boolean> {
+		if (this.completeKindle && kindleBook(this.library.frontmatter(file))) return this.completeKindle(file);
 		const s = this.settings();
 		const id = this.library.identifierOf(file);
 		if (!id) {

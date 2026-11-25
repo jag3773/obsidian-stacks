@@ -8,13 +8,15 @@ This page was written against Kindle Highlights 2.3.1.
 
 - **The Kindle plugin finds its notes by a property, not by name.** Each note it writes carries `kindle-bookId`, `kindle-title`, `kindle-author` and a few other `kindle-*` properties. On the next sync it looks for that `kindle-bookId` anywhere inside its highlights folder. So Stacks can rename the note to its citekey, and the Kindle plugin still finds it.
 - **A Kindle sync adds, it doesn't rewrite.** It keeps every property it didn't write (your `citekey`, `status`, `collections`, `attachments`), and it inserts new highlights after the ones it wrote before. It recognizes those by the `^ref-…` block id at the end of each highlight's line.
-- **Stacks completes any note in your references folder that has no citekey yet.** With **Complete notes on property edit** on (Settings → Automation, on by default), it looks the book up, fills in the empty properties, gives it a citekey, and renames it in the folder it is in. It never changes the note's body.
+- **Stacks completes any note in your references folder that has no citekey yet.** With **Complete notes on property edit** on (Settings → Automation, on by default), when the Kindle plugin writes a note there, or you move one in, Stacks looks the book up, fills in the empty properties, gives it a citekey, and renames it in the folder it is in. It never changes the note's body.
 
 ## Setting up
 
 1. **Kindle Highlights → Highlights folder location:** choose a folder *inside* your Stacks references folder, such as `References/Kindle`. Don't choose the references folder itself:
    - The Kindle plugin only checks the first 1,000 notes in its folder when it syncs. Your library may be larger.
    - Stacks only completes notes inside the references folder.
+
+   **Folder missing from the list?** Create it in the file explorer first. The Kindle plugin builds its list from Obsidian's internal file list, which may not show a folder you just made. Restart Obsidian and look again. If the folder still isn't there, close Obsidian and set it yourself in `.obsidian/plugins/obsidian-kindle-plugin/data.json`: `"highlightsFolder": "References/Kindle"`. Don't pick the references folder instead, even for a moment. The Kindle plugin looks in every subfolder of its folder, so it starts writing notes for your books straight away (see [Already pointed it at the references folder?](#already-pointed-it-at-the-references-folder)).
 2. **Kindle Highlights → Download book metadata:** turn it on, so the File template can use the book's ISBN.
 3. **Kindle Highlights → Templates → File template:** start it with properties Stacks can use, then the highlights:
 
@@ -34,6 +36,21 @@ This page was written against Kindle Highlights 2.3.1.
    - **The File name template doesn't matter.** Stacks renames the note to its citekey.
    - **Any Highlight template works.** The Kindle plugin adds the `^ref-…` block ids itself.
 4. **Sync** (Kindle Highlights: Sync highlights).
+
+## Already have Kindle notes in another folder?
+
+If the Kindle plugin has been writing to a folder outside your library, such as `Resources/Kindle`:
+
+1. In the file explorer, drag that folder into your references folder, so it becomes `References/Kindle`.
+2. Set **Highlights folder location** to the folder's new place.
+
+With **Complete notes on property edit** on, each note you move in is completed as if you had just edited it: one at a time, by ISBN or by title and author, or added to the reference you already have. With it off, run **Complete metadata** on the folder: right-click it, choose **Batch edit references in this folder**, then **Complete metadata**.
+
+If your older notes have `title` or `author` properties from an earlier File template, Stacks keeps them. Amazon's author line is one string ("Nicole Forsgren PhD, Jez Humble, and Gene Kim"), so delete those properties first if you want Stacks' names.
+
+### Already pointed it at the references folder?
+
+Then the Kindle plugin wrote a note for each book, and Stacks completed them where they landed, in the references folder itself. Once the Kindle plugin is set to a folder inside it, move those notes (the ones with `kindle-*` properties) into that folder. They already have citekeys, and the Kindle plugin will find them there on its next sync, so it won't write them again.
 
 ## What happens on a sync
 
