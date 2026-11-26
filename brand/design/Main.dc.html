@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stacks — Index direction</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+button{font:inherit;cursor:pointer}
+.ix{--bg:#F4F5F7;--surface:#FFFFFF;--surface-2:#FBFCFD;--ink:#0F1419;--body:#3D4652;--muted:#5A6472;--line:#DADFE6;--line-soft:#EEF1F4;--track:#E3E7EC;--strong-bg:#0F1419;--on-strong:#FFFFFF;--inv-bg:#0F1419;--inv-line:#2A323D;--inv-text:#F4F5F7;--inv-muted:#AEB7C3;--sel-bg:#F4F5F7;--sel-border:#0F1419;--signal-ink:#B93A0B;--mark-tint:#FFE9DF;--mark-text:#8A2A06;--filed:#0E7A5E;color-scheme:light}
+.ix.dark{--bg:#0B0E12;--surface:#12171D;--surface-2:#0F1318;--ink:#EEF1F4;--body:#B6BFCA;--muted:#8E98A6;--line:#252D37;--line-soft:#1B2129;--track:#252D37;--strong-bg:#EEF1F4;--on-strong:#0B0E12;--inv-bg:#12171D;--inv-line:#252D37;--inv-text:#EEF1F4;--inv-muted:#A3ADBA;--sel-bg:#1B2129;--sel-border:#EEF1F4;--signal-ink:#FF8A5C;--mark-tint:#3A1A0E;--mark-text:#FFB08F;--filed:#4FD1A5;color-scheme:dark}
+.ix a{color:var(--signal-ink)}
+.ix a:hover{color:var(--ink)}
+</style>
+</helmet>
+<div class="ix {{themeClass}}" style="font-family: Inter, system-ui, sans-serif; color: var(--ink); background: var(--bg); min-height: 100vh;">
+
+<header style="border-bottom: 1px solid var(--line); background: var(--surface);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 14px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px;">
+<a href="#top" aria-label="Stacks home" style="display: flex; align-items: center; min-height: 44px;">
+<sc-if value="{{dark}}" hint-placeholder-val="{{ false }}"><img src="/_blob/8898f6841a8da988ef64eb3741d153e1" alt="Stacks" style="height: 34px; width: auto; display: block;"></sc-if>
+<sc-if value="{{light}}" hint-placeholder-val="{{ true }}"><img src="/_blob/b203c6417a40f7c1bd75357cf47fa41a" alt="Stacks" style="height: 34px; width: auto; display: block;"></sc-if>
+</a>
+<nav aria-label="Main" style="display: flex; flex-wrap: wrap; gap: 4px 24px; flex: 1 1 auto; font-size: 15px;">
+<a href="#demo" style="color: var(--body); text-decoration: none; padding: 10px 0;">How it works</a>
+<a href="#formats" style="color: var(--body); text-decoration: none; padding: 10px 0;">Formats</a>
+<a href="#cite" style="color: var(--body); text-decoration: none; padding: 10px 0;">Citing</a>
+<a href="#zotero" style="color: var(--body); text-decoration: none; padding: 10px 0;">From Zotero</a>
+<a href="#docs" style="color: var(--body); text-decoration: none; padding: 10px 0;">Docs</a>
+</nav>
+<div style="display: flex; gap: 10px; align-items: center;">
+<button type="button" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink);">
+<sc-if value="{{light}}" hint-placeholder-val="{{ true }}"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M15 10.5A6.5 6.5 0 0 1 7.5 3a6.5 6.5 0 1 0 7.5 7.5z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"></path></svg></sc-if>
+<sc-if value="{{dark}}" hint-placeholder-val="{{ false }}"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.6" fill="none"></circle><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M3.7 14.3l1.4-1.4M12.9 5.1l1.4-1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg></sc-if>
+</button>
+<a href="https://github.com/jag3773/obsidian-stacks" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); text-decoration: none; font-weight: 500; font-size: 14px;">GitHub</a>
+<a href="#install" style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 8px; background: var(--strong-bg); color: var(--on-strong); text-decoration: none; font-weight: 600; font-size: 14px;">Install in Obsidian</a>
+</div>
+</div>
+</header>
+
+<section id="top" style="max-width: 1200px; margin: 0 auto; padding: 72px 24px 48px; display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start;">
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 24px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--muted); letter-spacing: 0.04em;">OBSIDIAN PLUGIN · EARLY RELEASE · v0.6</span>
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: clamp(44px, 6vw, 76px); line-height: 0.98; letter-spacing: -0.035em;">Your sources.<br>Your ideas.<br>One home.</h1>
+<p style="margin: 0; font-size: 19px; line-height: 1.55; color: var(--body); max-width: 34em;">Stacks is a research library inside your vault. Collect sources, read deeply, connect ideas and cite with confidence. Every reference is an ordinary Markdown note you keep, even without the plugin.</p>
+<div id="install" style="display: flex; flex-wrap: wrap; gap: 12px;">
+<a href="obsidian://show-plugin?id=stacks" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 8px; background: {{accent}}; color: #0F1419; text-decoration: none; font-weight: 600;">Install from Community plugins</a>
+<a href="#docs" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 8px; border: 1px solid var(--ink); color: var(--ink); text-decoration: none; font-weight: 600;">Read the guide</a>
+</div>
+<p style="margin: 0; font-size: 14px; color: var(--muted);">Settings → Community plugins → Browse → search “Stacks”.</p>
+</div>
+
+<div id="demo" style="flex: 1 1 520px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">
+<span>Inbox → References</span>
+<span>Pick a file to watch Stacks file it</span>
+</div>
+<div style="display: flex; flex-wrap: wrap;">
+<div style="flex: 1 1 200px; min-width: 0; border-right: 1px solid var(--line-soft); padding: 10px; display: flex; flex-direction: column; gap: 6px;">
+<sc-for list="{{inbox}}" as="item" hint-placeholder-count="4">
+<button type="button" onClick="{{item.pick}}" aria-pressed="{{item.pressed}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; min-height: 56px; padding: 10px 12px; border-radius: 8px; border: 1px solid {{item.border}}; background: {{item.bg}}; color: var(--ink);">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.05em;">{{item.kind}}</span>
+<span style="font-size: 14px; font-weight: 500; word-break: break-all;">{{item.file}}</span>
+</button>
+</sc-for>
+</div>
+<div style="flex: 2 1 300px; min-width: 0; padding: 18px; display: flex; flex-direction: column; gap: 16px;">
+<ol aria-label="Filing steps" style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+<li style="display: flex; flex-direction: column; gap: 6px;">
+<span style="height: 4px; border-radius: 2px; background: {{s.bar}};"></span>
+<span style="font-size: 12px; line-height: 1.3; color: {{s.text}};">{{s.label}}</span>
+</li>
+</sc-for>
+</ol>
+<div style="border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2);">
+<div style="padding: 10px 14px; border-bottom: 1px solid var(--line-soft); font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">References/{{note.fileName}}</div>
+<div style="padding: 14px; display: flex; flex-direction: column; gap: 8px; min-height: 196px;">
+<sc-if value="{{waiting}}" hint-placeholder-val="{{ false }}">
+<span style="font-size: 14px; color: var(--muted);">{{note.found}}…</span>
+</sc-if>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+<div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.5;">
+<span style="color: var(--muted);">{{r.k}}</span>
+<span style="color: {{r.color}}; word-break: break-word;">{{r.v}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{done}}" hint-placeholder-val="{{ true }}">
+<p style="margin: 0; font-size: 14px; color: var(--filed); display: flex; align-items: center; gap: 8px;"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Filed. {{note.found}}; the file sits beside its note.</p>
+</sc-if>
+</div>
+</div>
+</div>
+</section>
+
+<section style="border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+<div style="padding: 28px 24px 28px 0; display: flex; flex-direction: column; gap: 8px; border-right: 1px solid var(--line-soft);">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--signal-ink);">01 COLLECT</span>
+<span style="font-size: 15px; line-height: 1.5;">Paste an ISBN, DOI, arXiv ID or URL, or drop a file in your inbox.</span>
+</div>
+<div style="padding: 28px 24px; display: flex; flex-direction: column; gap: 8px; border-right: 1px solid var(--line-soft);">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--signal-ink);">02 READ</span>
+<span style="font-size: 15px; line-height: 1.5;">Highlights and comments become callouts in the note, linked to their page.</span>
+</div>
+<div style="padding: 28px 24px; display: flex; flex-direction: column; gap: 8px; border-right: 1px solid var(--line-soft);">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--signal-ink);">03 CONNECT</span>
+<span style="font-size: 15px; line-height: 1.5;">Link sources to projects, people and drafts with Obsidian’s own links and Bases.</span>
+</div>
+<div style="padding: 28px 0 28px 24px; display: flex; flex-direction: column; gap: 8px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--signal-ink);">04 CITE</span>
+<span style="font-size: 15px; line-height: 1.5;">Insert citekeys as you write; export CSL-JSON or BibTeX for Pandoc and Quarto.</span>
+</div>
+</div>
+</section>
+
+<section id="formats" style="max-width: 1200px; margin: 0 auto; padding: 88px 24px; display: flex; flex-wrap: wrap; gap: 48px;">
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 40px; line-height: 1.05; letter-spacing: -0.025em;">Every format your library comes in.</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: var(--body);">Not every library is a folder of PDFs. Stacks reads each file for an ISBN or DOI, looks it up, and files it beside its note. One reference holds every copy: the PDF, the EPUB, the chapter scan.</p>
+</div>
+<div style="flex: 1.4 1 460px; min-width: 0; display: flex; flex-direction: column;">
+<div role="tablist" aria-label="File formats" style="display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line);">
+<sc-for list="{{formats}}" as="f" hint-placeholder-count="4">
+<button type="button" role="tab" aria-selected="{{f.selected}}" onClick="{{f.pick}}" style="min-height: 48px; padding: 0 18px; border: none; border-bottom: 3px solid {{f.underline}}; background: transparent; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 16px; color: {{f.color}};">{{f.name}}</button>
+</sc-for>
+</div>
+<div role="tabpanel" style="padding: 28px 0; display: flex; flex-direction: column; gap: 14px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--muted);">{{format.ext}}</span>
+<p style="margin: 0; font-size: 20px; line-height: 1.5;">{{format.reads}}</p>
+</div>
+</div>
+</section>
+
+<section style="background: var(--inv-bg); color: var(--inv-text); border-top: 1px solid var(--inv-line); border-bottom: 1px solid var(--inv-line);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 88px 24px; display: flex; flex-direction: column; gap: 40px;">
+<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 40px; line-height: 1.05; letter-spacing: -0.025em; max-width: 18em;">What a reference manager does, kept in plain notes.</h2>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1px; background: var(--inv-line); border: 1px solid var(--inv-line);">
+<div style="background: var(--inv-bg); padding: 28px; display: flex; flex-direction: column; gap: 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 19px;">Turn highlights into notes</span><span style="font-size: 15px; line-height: 1.55; color: var(--inv-muted);">Extract annotations groups a PDF’s highlights by page. Re-running updates only Stacks’ block, never your writing.</span></div>
+<div style="background: var(--inv-bg); padding: 28px; display: flex; flex-direction: column; gap: 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 19px;">Read on a tablet, bring it home</span><span style="font-size: 15px; line-height: 1.55; color: var(--inv-muted);">Set a note to reading and its PDF goes to your synced folder. When it returns changed, Stacks files it and pulls the highlights.</span></div>
+<div style="background: var(--inv-bg); padding: 28px; display: flex; flex-direction: column; gap: 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 19px;">Find an open-access PDF</span><span style="font-size: 15px; line-height: 1.55; color: var(--inv-muted);">Checks Unpaywall and the landing page, shows which copy it found, and attaches it only after you confirm.</span></div>
+<div style="background: var(--inv-bg); padding: 28px; display: flex; flex-direction: column; gap: 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 19px;">Browse with Bases</span><span style="font-size: 15px; line-height: 1.55; color: var(--inv-muted);">A starter base with a view for each reading status, unfiled references and anything missing a file.</span></div>
+<div style="background: var(--inv-bg); padding: 28px; display: flex; flex-direction: column; gap: 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 19px;">Keep the library healthy</span><span style="font-size: 15px; line-height: 1.55; color: var(--inv-muted);">A report of duplicate citekeys, broken links and orphaned files. Every repair shows a preview first.</span></div>
+<div style="background: var(--inv-bg); padding: 28px; display: flex; flex-direction: column; gap: 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 19px;">Capture offline, sync anywhere</span><span style="font-size: 15px; line-height: 1.55; color: var(--inv-muted);">A clip saved without a connection waits in the inbox and is retried later, without filing a duplicate.</span></div>
+</div>
+</div>
+</section>
+
+<section id="cite" style="max-width: 1200px; margin: 0 auto; padding: 88px 24px; display: flex; flex-wrap: wrap; gap: 48px; align-items: center;">
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 40px; line-height: 1.05; letter-spacing: -0.025em;">Cite while you write.</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: var(--body);">Insert citation searches by citekey, title, author or year. Choose how it lands in your draft.</p>
+<div role="radiogroup" aria-label="Citation style" style="display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-for list="{{cites}}" as="c" hint-placeholder-count="3">
+<button type="button" role="radio" aria-checked="{{c.selected}}" onClick="{{c.pick}}" style="min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.bg}}; color: {{c.color}}; font-weight: 500; font-size: 14px;">{{c.label}}</button>
+</sc-for>
+</div>
+</div>
+<div style="flex: 1.3 1 460px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 28px; display: flex; flex-direction: column; gap: 18px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);">Drafts/essay-on-craft.md</span>
+<p style="margin: 0; font-size: 19px; line-height: 1.6;">Ambitious projects rarely start from a plan; they start from noticing what nobody else is curious about <span style="font-family: {{cite.font}}; background: var(--mark-tint); color: var(--mark-text); padding: 2px 6px; border-radius: 4px; font-size: 16px;">{{cite.inline}}</span>.</p>
+<sc-if value="{{cite.hasBib}}" hint-placeholder-val="{{ false }}">
+<div style="border-top: 1px solid var(--line-soft); padding-top: 14px; font-size: 15px; line-height: 1.55; color: var(--body);">Graham, Paul. 2023. “How to Do Great Work.” https://paulgraham.com/greatwork.html.</div>
+</sc-if>
+<span style="font-size: 13px; color: var(--muted);">{{cite.note}}</span>
+</div>
+</section>
+
+<section id="zotero" style="background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+<div style="max-width: 1200px; margin: 0 auto; padding: 72px 24px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center;">
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--signal-ink);">COMING FROM ZOTERO?</span>
+<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 34px; line-height: 1.1; letter-spacing: -0.02em;">Bring your library. Keep your notes.</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: var(--body);">Import from Zotero reads a Better BibTeX JSON export, shows you what it will do, adds properties to the notes you already have without touching their text, and can be undone.</p>
+</div>
+<a href="#docs" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 8px; border: 1px solid var(--ink); color: var(--ink); text-decoration: none; font-weight: 600;">Migration guide →</a>
+</div>
+</section>
+
+<section id="docs" style="max-width: 1200px; margin: 0 auto; padding: 72px 24px 96px; display: flex; flex-direction: column; gap: 24px;">
+<div style="display: flex; gap: 14px; align-items: flex-start; padding: 20px 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--muted);">
+<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" style="flex: none; margin-top: 2px;"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6" fill="none"></circle><path d="M10 6v5M10 13.5v.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--body);"><strong style="color: var(--ink);">Young software.</strong> Stacks has been tested on its author’s own vault so far. Keep a backup of your vault, and tell us what you find on GitHub.</p>
+</div>
+<footer style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted);">
+<span style="display: flex; align-items: center; gap: 10px;">
+<sc-if value="{{dark}}" hint-placeholder-val="{{ false }}"><img src="/_blob/66ce9eba7639bdc7fa6ac654017bb387" alt="" style="height: 20px; width: auto; display: block;"></sc-if>
+<sc-if value="{{light}}" hint-placeholder-val="{{ true }}"><img src="/_blob/03ac775e77568c2154e0660015f995fa" alt="" style="height: 20px; width: auto; display: block;"></sc-if>
+Stacks · an Obsidian plugin</span>
+<span style="display: flex; flex-wrap: wrap; gap: 20px;"><a href="#docs">Docs</a><a href="https://github.com/jag3773/obsidian-stacks">GitHub</a><a href="#docs">Changelog</a></span>
+</footer>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"accent":{"editor":"color","default":"#FF5A1F","options":["#FF5A1F","#2F6BFF","#12B886","#0F1419"]},"$preview":{"width":1440,"height":2700}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 0, step: 4, fmt: 0, cite: 0, dark: null };
+  }
+  componentWillUnmount() { if (this.timer) clearInterval(this.timer); }
+  run(i) {
+    if (this.timer) clearInterval(this.timer);
+    this.setState({ sel: i, step: 0 });
+    this.timer = setInterval(() => {
+      if (this.state.step >= 4) { clearInterval(this.timer); this.timer = null; return; }
+      this.setState({ step: this.state.step + 1 });
+    }, 600);
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#FF5A1F';
+    const dark = this.state.dark ?? ((this.props.theme ?? 'light') === 'dark');
+    const files = [
+      { kind: 'PDF', file: 'clark-chalmers.pdf', found: 'Found a DOI on the first page', fileName: 'clarkExtendedMind1998.md',
+        meta: [['type', 'article'], ['title', 'The Extended Mind'], ['authors', 'Clark, Andy; Chalmers, David'], ['year', '1998'], ['doi', '10.1093/analys/58.1.7']],
+        key: 'clarkExtendedMind1998', att: 'clarkExtendedMind1998.pdf' },
+      { kind: 'EPUB', file: 'the-shallows.epub', found: 'Read the ISBN in the book’s own metadata', fileName: 'carrShallows2010.md',
+        meta: [['type', 'book'], ['title', 'The Shallows'], ['authors', 'Carr, Nicholas'], ['year', '2010']],
+        key: 'carrShallows2010', att: 'carrShallows2010.epub' },
+      { kind: 'WEB CLIP', file: 'How to Do Great Work.md', found: 'Took the URL Web Clipper saved', fileName: 'grahamHowGreatWork2023.md',
+        meta: [['type', 'webpage'], ['title', 'How to Do Great Work'], ['authors', 'Graham, Paul'], ['year', '2023'], ['url', 'paulgraham.com/greatwork.html']],
+        key: 'grahamHowGreatWork2023', att: null },
+      { kind: 'KINDLE', file: 'smart-notes.azw3', found: 'Read the ISBN in the book’s header', fileName: 'ahrensHowTakeSmart2017.md',
+        meta: [['type', 'book'], ['title', 'How to Take Smart Notes'], ['authors', 'Ahrens, Sönke'], ['year', '2017']],
+        key: 'ahrensHowTakeSmart2017', att: 'ahrensHowTakeSmart2017.azw3' }
+    ];
+    const { sel, step } = this.state;
+    const cur = files[sel];
+    const inbox = files.map((f, i) => ({
+      kind: f.kind, file: f.file, pressed: i === sel ? 'true' : 'false',
+      border: i === sel ? 'var(--sel-border)' : 'var(--line-soft)', bg: i === sel ? 'var(--sel-bg)' : 'var(--surface)',
+      pick: () => this.run(i)
+    }));
+    const labels = ['Read the file', 'Looked it up', 'Gave it a citekey', 'Filed it'];
+    const steps = labels.map((label, i) => ({
+      label, bar: i < step ? accent : 'var(--track)', text: i < step ? 'var(--ink)' : 'var(--muted)'
+    }));
+    let rows = [];
+    if (step >= 2) rows = cur.meta.map(([k, v]) => ({ k, v, color: 'var(--ink)' }));
+    if (step >= 3) rows.push({ k: 'citekey', v: cur.key, color: 'var(--signal-ink)' });
+    if (step >= 4) rows.push({ k: 'attachments', v: cur.att ? '[[' + cur.att + ']]' : '— (web page)', color: 'var(--ink)' });
+    const fmts = [
+      { name: 'PDF', ext: '.pdf', reads: 'A DOI, ISBN or PubMed ID in the first pages, plus the title and author. Without them, the byline under the title, and for a page printed from a browser, its URL and print date.' },
+      { name: 'EPUB & Kobo', ext: '.epub · .kepub', reads: 'The book’s own ISBN, title, authors, publisher and date, or the ISBN on its copyright page.' },
+      { name: 'Kindle', ext: '.mobi · .azw · .azw3', reads: 'The ISBN, title, authors, publisher and date in the book’s header, readable even when the book has DRM.' },
+      { name: 'Word & ODT', ext: '.docx · .odt', reads: 'The title and author, and a DOI or ISBN in the text.' }
+    ];
+    const formats = fmts.map((f, i) => ({
+      name: f.name, selected: i === this.state.fmt ? 'true' : 'false',
+      underline: i === this.state.fmt ? accent : 'transparent',
+      color: i === this.state.fmt ? 'var(--ink)' : 'var(--muted)',
+      pick: () => this.setState({ fmt: i })
+    }));
+    const citeModes = [
+      { label: 'Pandoc  [@key]', inline: '[@grahamHowGreatWork2023]', font: "'JetBrains Mono', monospace", hasBib: false, note: 'Pandoc and Quarto read this with your exported CSL-JSON or BibTeX.' },
+      { label: 'Wikilink  [[key]]', inline: '[[grahamHowGreatWork2023]]', font: "'JetBrains Mono', monospace", hasBib: false, note: 'Links straight to the reference note in your vault.' },
+      { label: 'Chicago author-date', inline: '(Graham 2023)', font: 'Inter, sans-serif', hasBib: true, note: 'Copy formatted citation, in Chicago or any CSL style in your vault.' }
+    ];
+    const cites = citeModes.map((c, i) => ({
+      label: c.label, selected: i === this.state.cite ? 'true' : 'false',
+      border: i === this.state.cite ? 'var(--strong-bg)' : 'var(--line)',
+      bg: i === this.state.cite ? 'var(--strong-bg)' : 'var(--surface)',
+      color: i === this.state.cite ? 'var(--on-strong)' : 'var(--ink)',
+      pick: () => this.setState({ cite: i })
+    }));
+    return {
+      accent, dark, light: !dark, themeClass: dark ? 'dark' : '',
+      themeLabel: dark ? 'Switch to light mode' : 'Switch to dark mode',
+      toggleTheme: () => this.setState({ dark: !dark }),
+      inbox, steps, rows, note: cur,
+      waiting: step < 2, done: step >= 4,
+      formats, format: fmts[this.state.fmt],
+      cites, cite: citeModes[this.state.cite]
+    };
+  }
+}
+</script>
+</body>
+</html>

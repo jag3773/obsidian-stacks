@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Night Shelf — palette and components</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Inter:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#C8F560}a:hover{color:#E2FFA0}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1280px; height: 1500px; box-sizing: border-box; padding: 64px; background: #0C0F14; color: #E9EDF2; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 44px;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; border-bottom: 1px solid #2A3240; padding-bottom: 24px;">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #9AA4B2;">DIRECTION B</span>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 60px; letter-spacing: -0.04em; line-height: 1;">Night Shelf</h1>
+</div>
+<p style="margin: 0; max-width: 540px; font-size: 16px; line-height: 1.55; color: #B4BDC9;">Feels like Obsidian after dark: deep blue-black layers, a command-palette voice, and a lime accent that marks what you can do next. Violet and amber are status colours only.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px;">Palette</h2>
+<div style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 12px;">
+<sc-for list="{{core}}" as="c" hint-placeholder-count="9">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<div style="height: 96px; border-radius: 12px; background: {{c.hex}}; border: 1px solid #2A3240;"></div>
+<span style="font-weight: 600; font-size: 14px;">{{c.name}}</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #B4BDC9;">{{c.hex}}</span>
+<span style="font-size: 12px; line-height: 1.4; color: #9AA4B2;">{{c.role}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+<span style="font-size: 13px; color: #9AA4B2; margin-right: 6px;">Status tints</span>
+<sc-for list="{{statuses}}" as="s" hint-placeholder-count="5">
+<span style="padding: 4px 10px; border-radius: 6px; background: {{s.bg}}; color: {{s.fg}}; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">{{s.name}}</span>
+</sc-for>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+<div style="padding: 22px; border-radius: 16px; background: #151A22; border: 1px solid #2A3240; display: flex; flex-direction: column; gap: 6px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA4B2;">DISPLAY · Bricolage Grotesque 800</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 60px; letter-spacing: -0.04em; line-height: 0.95;">One <span style="color: {{accent}};">home.</span></span>
+</div>
+<div style="padding: 22px; border-radius: 16px; background: #151A22; border: 1px solid #2A3240; display: flex; flex-direction: column; gap: 8px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA4B2;">BODY · Inter 400/600</span>
+<span style="font-size: 19px; line-height: 1.55;">Plain notes you own.</span>
+<span style="font-size: 15px; line-height: 1.55; color: #B4BDC9;">Secondary copy in mist #B4BDC9; labels no darker than #9AA4B2.</span>
+</div>
+<div style="padding: 22px; border-radius: 16px; background: #151A22; border: 1px solid #2A3240; display: flex; flex-direction: column; gap: 8px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA4B2;">COMMAND · IBM Plex Mono 400</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 16px;">Stacks: Insert citation</span>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: {{accent}};">[@carrShallows2010, 42]</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 24px;">Components</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;">
+
+<div style="padding: 22px; border-radius: 16px; background: #151A22; border: 1px solid #2A3240; display: flex; flex-direction: column; gap: 14px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA4B2;">BUTTONS</span>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<button type="button" style="min-height: 48px; padding: 0 22px; border-radius: 999px; border: none; background: {{accent}}; color: #0C0F14; font-weight: 700;">Install Stacks</button>
+<button type="button" style="min-height: 48px; padding: 0 22px; border-radius: 999px; border: 1px solid #3A4454; background: transparent; color: #E9EDF2; font-weight: 600;">Read the docs</button>
+<button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 10px; border: none; background: #1E2530; color: #E9EDF2; font-weight: 500;">Preview</button>
+</div>
+<span style="font-size: 13px; line-height: 1.5; color: #9AA4B2;">Pills for marketing actions; the squarer secondary echoes Obsidian’s own buttons.</span>
+</div>
+
+<div style="padding: 22px; border-radius: 16px; background: #151A22; border: 1px solid #2A3240; display: flex; flex-direction: column; gap: 14px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA4B2;">COMMAND ROW + CHIPS · click a chip</span>
+<div style="border-radius: 12px; background: #0C0F14; border: 1px solid #2A3240; padding: 12px 14px; display: flex; gap: 10px; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px;">
+<svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 5l4 4-4 4M9 13h6" stroke="#9AA4B2" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span>Add reference</span><span style="color: {{accent}};">{{chip.value}}</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="4">
+<button type="button" onClick="{{c.pick}}" aria-pressed="{{c.pressed}}" style="min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.bg}}; color: {{c.color}}; font-family: 'IBM Plex Mono', monospace; font-size: 13px;">{{c.kind}}</button>
+</sc-for>
+</div>
+</div>
+
+<div style="padding: 22px; border-radius: 16px; background: #151A22; border: 1px solid #2A3240; display: flex; flex-direction: column; gap: 14px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA4B2;">SEGMENTED CONTROL · click</span>
+<div role="tablist" aria-label="Export format" style="display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: #0C0F14; border: 1px solid #2A3240; align-self: flex-start;">
+<sc-for list="{{segs}}" as="s" hint-placeholder-count="3">
+<button type="button" role="tab" aria-selected="{{s.selected}}" onClick="{{s.pick}}" style="min-height: 40px; padding: 0 16px; border-radius: 999px; border: none; background: {{s.bg}}; color: {{s.color}}; font-weight: 600; font-size: 14px;">{{s.name}}</button>
+</sc-for>
+</div>
+<span style="font-size: 13px; line-height: 1.5; color: #9AA4B2;">For switching what one panel shows: export formats, citation styles.</span>
+</div>
+
+<div style="padding: 22px; border-radius: 16px; background: #151A22; border: 1px solid #2A3240; display: flex; flex-direction: column; gap: 14px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA4B2;">STATUS STEP · click to advance</span>
+<button type="button" onClick="{{advance}}" style="text-align: left; min-height: 88px; padding: 16px 18px; border-radius: 14px; border: 1px solid {{accent}}; background: #1A202A; color: #E9EDF2; display: flex; flex-direction: column; gap: 6px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{accent}};">0{{stepNum}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px;">{{st.name}}</span>
+</button>
+<span style="padding: 4px 10px; border-radius: 6px; background: {{st.bg}}; color: {{st.fg}}; font-family: 'IBM Plex Mono', monospace; font-size: 12px; align-self: flex-start;">status: {{st.name}}</span>
+</div>
+
+<div style="border-radius: 16px; background: #151A22; border: 1px solid #2A3240; overflow: hidden; display: flex; flex-direction: column;">
+<div style="padding: 12px 18px; border-bottom: 1px solid #2A3240; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AA4B2;">CODE PANEL · library.bib</div>
+<pre style="margin: 0; padding: 16px 18px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; line-height: 1.6; color: #E9EDF2; white-space: pre; overflow-x: auto;">@book{carrShallows2010,
+  author = {Carr, Nicholas},
+  title  = {The Shallows},
+  year   = {2010}
+}</pre>
+</div>
+
+<div style="padding: 22px; border-radius: 16px; background: #151A22; border: 1px solid #2A3240; display: flex; flex-direction: column; gap: 10px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: {{accent}};">FEATURE CARD</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 22px;">Yours without the plugin</span>
+<span style="font-size: 15px; line-height: 1.55; color: #B4BDC9;">Metadata in properties, files in ordinary folders. The eyebrow takes lime, violet or amber.</span>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#C8F560","options":["#C8F560","#A594FF","#FFB86B","#5CE1E6"]},"$preview":{"width":1280,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { chip: 0, seg: 0, step: 0 }; }
+  renderVals() {
+    const accent = this.props.accent ?? '#C8F560';
+    const core = [
+      { name: 'Night', hex: '#0C0F14', role: 'Page ground' },
+      { name: 'Shelf', hex: '#151A22', role: 'Cards, panels' },
+      { name: 'Raise', hex: '#1E2530', role: 'Hover, chips, inputs' },
+      { name: 'Line', hex: '#2A3240', role: 'Borders' },
+      { name: 'Paper', hex: '#E9EDF2', role: 'Primary text' },
+      { name: 'Mist', hex: '#B4BDC9', role: 'Body secondary' },
+      { name: 'Lime', hex: accent, role: 'Next action, citekeys' },
+      { name: 'Violet', hex: '#A594FF', role: 'Reviewing, highlights' },
+      { name: 'Amber', hex: '#FFB86B', role: 'Health, warnings' }
+    ];
+    const statuses = [
+      { name: 'queued', bg: '#1E2530', fg: '#B4BDC9' },
+      { name: 'reading', bg: '#26330F', fg: '#C8F560' },
+      { name: 'reviewing', bg: '#2A2350', fg: '#C9BEFF' },
+      { name: 'processed', bg: '#11332B', fg: '#7EE2C0' },
+      { name: 'shelved', bg: '#3A2A16', fg: '#FFB86B' }
+    ];
+    const chipList = [
+      { kind: 'ISBN', value: '978-0-393-07222-8' },
+      { kind: 'DOI', value: '10.1093/analys/58.1.7' },
+      { kind: 'arXiv', value: '1706.03762' },
+      { kind: 'URL', value: 'paulgraham.com/greatwork.html' }
+    ];
+    const chips = chipList.map((c, i) => ({
+      kind: c.kind, pressed: i === this.state.chip ? 'true' : 'false',
+      border: i === this.state.chip ? accent : '#2A3240',
+      bg: i === this.state.chip ? '#1E2530' : 'transparent',
+      color: i === this.state.chip ? accent : '#B4BDC9',
+      pick: () => this.setState({ chip: i })
+    }));
+    const segs = ['CSL-JSON', 'BibLaTeX', 'BibTeX'].map((name, i) => ({
+      name, selected: i === this.state.seg ? 'true' : 'false',
+      bg: i === this.state.seg ? accent : 'transparent',
+      color: i === this.state.seg ? '#0C0F14' : '#B4BDC9',
+      pick: () => this.setState({ seg: i })
+    }));
+    const st = statuses[this.state.step];
+    return {
+      accent, core, statuses, chips, chip: chipList[this.state.chip], segs, st,
+      stepNum: this.state.step + 1,
+      advance: () => this.setState({ step: (this.state.step + 1) % statuses.length })
+    };
+  }
+}
+</script>
+</body>
+</html>
