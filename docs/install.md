@@ -11,6 +11,6 @@ Download `main.js`, `manifest.json`, and `styles.css` from the latest [release](
 
 **Upgrading from 0.2.x?** The plugin was renamed from Library to Stacks in 0.3.0, and its ID changed from `library` to `stacks`. Disable the old plugin and keep a backup of its folder. To retain your settings, copy `.obsidian/plugins/library/data.json` into the new `stacks` folder before enabling Stacks, then remove the old folder.
 
-**Upgrading from 0.1.x?** The plugin ID changed from `reference-library` to `library` in 0.2.0. Disable the old plugin and keep a backup of its folder. To retain your settings, copy its `data.json` into the new `library` folder before enabling the new version.
+**Upgrading from 0.1.x?** The plugin ID was `reference-library` in 0.1.x, became `library` in 0.2.0 and is now `stacks`. You can go straight to Stacks. Disable the old plugin and keep a backup of its folder. To retain your settings, copy `.obsidian/plugins/reference-library/data.json` into the new `.obsidian/plugins/stacks/` folder before enabling Stacks, then remove the old folder.
 
 Then [set up your library](getting-started.md#set-up-your-library).

@@ -30,11 +30,11 @@ Before changing anything, write down each job Zotero does in your workflow and d
 | Collections, saved searches | Zotero UI | `collections` and `status` properties, plus Base views |
 | Reading queue | A "to read" collection or tag | `status: queued` |
 | Highlights into notes | Zotero Integration plugin | Stacks: **Extract annotations**, and the tablet reading round trip ([docs/annotations.md](annotations.md)) |
-| Citations | Better BibTeX export | **Stacks: Export bibliography** (CSL-JSON, BibLaTeX or BibTeX), optionally automatic; in-editor citations are planned in [#20](https://github.com/jag3773/obsidian-stacks/issues/20) |
+| Citations | Better BibTeX export, Zotero's word processor plugins | **Insert citation** while you write; **Copy formatted citation** and **Copy formatted bibliography** in Chicago author-date or any CSL style in your vault; **Export bibliography** (CSL-JSON, BibLaTeX or BibTeX), optionally automatic, for Pandoc and Quarto. See [citing your sources](citing.md) |
 | Full-text PDF search | Zotero index | Omnisearch + Text Extractor plugins ([#25](https://github.com/jag3773/obsidian-stacks/issues/25)) |
 | Shared group libraries | Zotero groups | Out of scope; share a vault instead |
 
-If a job you rely on is still "planned", keep Zotero for that one job during the transition.
+Stacks doesn't plug into Word, Google Docs or LibreOffice the way Zotero's word processor plugins do: you write in Obsidian, then render with Pandoc or Quarto, or paste a formatted citation. If you write in a word processor and rely on Zotero's live citations there, keep Zotero for that one job.
 
 ## Step 2: Decide the note format
 

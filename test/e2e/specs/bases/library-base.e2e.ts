@@ -9,6 +9,7 @@
 // rows that fit in the window (CI tiles two Obsidian windows side by side), so it is scrolled
 // through and every row it draws is collected.
 import { browser, expect } from "@wdio/globals";
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, it } from "mocha";
 import { frontmatter, getSetting, read, renameInVault, resetLibrary, runCommand, setSettings, waitForFiles, waitForNotice } from "../../helpers/stacks";
 
@@ -71,6 +72,20 @@ async function openView(file: string, viewName: string): Promise<ViewResult> {
 		file,
 		viewName
 	);
+}
+
+/**
+ * By note path: the file a formula links to in the open base view, or "". Read from the query
+ * results, since the table only draws the columns that fit in the window. A link value's text
+ * is `[[path|display]]`.
+ */
+async function formulaFiles(formula: string): Promise<Record<string, string>> {
+	return browser.executeObsidian(({ app }, id) => {
+		const c = (app.workspace.getLeavesOfType("bases")[0]?.view as any).controller;
+		return Object.fromEntries(
+			Array.from(c.results as Map<{ path: string }, { getValue(id: string): any }>).map(([f, e]) => [f.path, /^\[\[([^|\]]+)/.exec(String(e.getValue(id) ?? ""))?.[1] ?? ""])
+		);
+	}, formula);
 }
 
 const EDGE_CASES = {
@@ -210,6 +225,42 @@ describe("Library base in Bases", function () {
 			"Programming with Abstract Data Types": "",
 		});
 	});
+
+	// The example bases in the guides, read from the docs themselves, so a guide can't drift
+	// from what Bases accepts. Neither reads the old pdf property; both link only from attachments.
+	for (const [guide, after, formula] of [
+		["docs/getting-started.md", "<summary>Example Base to customize</summary>", "formula.file"],
+		["docs/migrating-from-zotero.md", "Then build a Base (`Stacks.base`)", "formula.file_icon"],
+	] as const) {
+		it(`evaluates the example base in ${guide} and links each reference's file from attachments`, async function () {
+			const text = readFileSync(guide, "utf8");
+			const block = /```yaml\n([\s\S]*?)```/.exec(text.slice(text.indexOf(after)))?.[1];
+			if (!block) throw new Error(`no yaml block after "${after}" in ${guide}`);
+			await resetLibrary({
+				...EDGE_CASES,
+				// Every attachment link is broken: an empty File cell, not an error.
+				"References/turingComputableNumbers1936.md":
+					'---\ncitekey: turingComputableNumbers1936\ntype: article\ntitle: On Computable Numbers\nauthors:\n  - "[[Alan Turing]]"\nyear: 1936\ncollections: ["[[Strategy]]"]\nattachments:\n  - "[[turing-gone.pdf]]"\nstatus: shelved\n---\n',
+				"Example.base": block,
+			});
+			const r = await openView("Example.base", "Library");
+			expect({ error: r.error, errorText: r.errorText }).toEqual({ error: null, errorText: "" });
+			expect(await formulaFiles(formula)).toEqual({
+				"References/porterCreatingSharedValue2011.md": "References/attachments/porterCreatingSharedValue2011.pdf",
+				// The broken link before it is passed over.
+				"References/knuthArtComputerProgramming1968.md": "References/attachments/knuthArtComputerProgramming1968.EPUB",
+				"References/shannonMathematicalTheory1948.md": "References/attachments/shannon-figures.zip",
+				// Only the old pdf property: Create base's column reads it, these examples don't.
+				"References/hopperCompilers1952.md": "",
+				// The first attachment that exists, where Create base prefers the pdf property's file.
+				"References/lamportTimeClocks1978.md": "References/attachments/lamport-errata.pdf",
+				"References/turingComputableNumbers1936.md": "",
+				"References/dijkstraGoToStatement1968.md": "",
+				"References/hookerLaws1989.md": "",
+				"References/liskovProgrammingAbstractData1974.md": "",
+			});
+		});
+	}
 
 	it("lists a Stacks batch view's rows and opens the batch preview for exactly those", async function () {
 		await resetLibrary({

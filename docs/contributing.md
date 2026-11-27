@@ -2,13 +2,13 @@
 
 ## Try it and tell us
 
-Stacks has been tested on one vault: its author's. Your library is different, and that is exactly why your experience helps. If you try it:
+Every change to Stacks runs automated tests: unit tests, and end-to-end tests in desktop Obsidian, also with the mobile UI emulated. The Android app is tested nightly on an emulator. Emulators aren't real devices, though, and testing by hand on real phones, tablets and sync services has covered few setups so far. [What is tested](sync-and-mobile.md#what-is-tested) lists what the automated tests cover and what still needs real devices. Your library and setup are different, and that is exactly why your experience helps. If you use Stacks:
 
 - **Something broke or surprised you?** [Open an issue](https://github.com/jag3773/obsidian-stacks/issues/new) with what you did, what you expected, and your Obsidian version and platform.
 - **It worked?** That is useful too, especially on a phone or tablet, with a sync service, or with a large library or an import from another tool. A short note in an issue is welcome.
 - **Want to fix or add something?** Pull requests are welcome. See [build and contribute](#build-and-contribute) below.
 
-Please keep a backup of your vault while you try it. Stacks previews its bigger changes before making them, but a backup is the best safety net for any new tool.
+Please keep a backup of your vault. Stacks previews its bigger changes before making them, but a backup is the best safety net for any plugin that changes your files.
 
 ## Build and contribute
 

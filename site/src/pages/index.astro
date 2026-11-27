@@ -19,6 +19,9 @@ const inbox = [
 	  meta: [["type", "book"], ["title", "How to Take Smart Notes"], ["authors", "Ahrens, Sönke"], ["year", "2017"]],
 	  key: "ahrensHowTakeSmart2017", att: "ahrensHowTakeSmart2017.azw3" },
 ];
+// What filing did with each item: a file sits beside its new note; a clip is the note itself.
+for (const f of inbox)
+	f.filed = "Filed. " + f.found + (f.att ? "; the file sits beside its note." : "; the clip became the reference note, filled in and moved, with its body kept.");
 const first = inbox[0];
 const steps = ["Read the file", "Looked it up", "Gave it a citekey", "Filed it"];
 
@@ -108,7 +111,7 @@ const guides = [
 <main>
 <section id="top" class="wrap hero">
 	<div class="hero-copy">
-		<span class="eyebrow">OBSIDIAN PLUGIN · EARLY RELEASE</span>
+		<span class="eyebrow">OBSIDIAN COMMUNITY PLUGIN · OPEN SOURCE</span>
 		<h1>Your sources.<br>Your ideas.<br>One home.</h1>
 		<p class="lede">Stacks is a research library inside your vault. Collect sources, read deeply, connect ideas and cite with confidence. Every reference is an ordinary Markdown note you keep, even without the plugin.</p>
 		<div id="install" class="row">
@@ -144,7 +147,7 @@ const guides = [
 						<div class="prop"><span class="muted">attachments</span><span>[[{first.att}]]</span></div>
 					</div>
 				</div>
-				<p class="filed" id="filed"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="filed-text">Filed. {first.found}; the file sits beside its note.</span></p>
+				<p class="filed" id="filed"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="filed-text">{first.filed}</span></p>
 			</div>
 		</div>
 	</div>
@@ -311,7 +314,7 @@ const guides = [
 		if (step >= 4) rows.push(prop("attachments", f.att ? "[[" + f.att + "]]" : "— (web page)"));
 		props.replaceChildren(...rows);
 		filed.hidden = step < 4;
-		filedText.textContent = "Filed. " + f.found + "; the file sits beside its note.";
+		filedText.textContent = f.filed;
 	}
 
 	items.forEach((btn) => btn.addEventListener("click", () => {
