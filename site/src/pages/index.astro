@@ -1,0 +1,508 @@
+---
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const u = (p = "") => `${base}/${p}`;
+const repo = "https://github.com/jag3773/obsidian-stacks";
+const fonts =
+	"https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap";
+
+const inbox = [
+	{ kind: "PDF", file: "clark-chalmers.pdf", found: "Found a DOI on the first page", fileName: "clarkExtendedMind1998.md",
+	  meta: [["type", "article"], ["title", "The Extended Mind"], ["authors", "Clark, Andy; Chalmers, David"], ["year", "1998"], ["doi", "10.1093/analys/58.1.7"]],
+	  key: "clarkExtendedMind1998", att: "clarkExtendedMind1998.pdf" },
+	{ kind: "EPUB", file: "the-shallows.epub", found: "Read the ISBN in the book’s own metadata", fileName: "carrShallows2010.md",
+	  meta: [["type", "book"], ["title", "The Shallows"], ["authors", "Carr, Nicholas"], ["year", "2010"]],
+	  key: "carrShallows2010", att: "carrShallows2010.epub" },
+	{ kind: "WEB CLIP", file: "How to Do Great Work.md", found: "Took the URL Web Clipper saved", fileName: "grahamHowGreatWork2023.md",
+	  meta: [["type", "webpage"], ["title", "How to Do Great Work"], ["authors", "Graham, Paul"], ["year", "2023"], ["url", "paulgraham.com/greatwork.html"]],
+	  key: "grahamHowGreatWork2023", att: null },
+	{ kind: "KINDLE", file: "smart-notes.azw3", found: "Read the ISBN in the book’s header", fileName: "ahrensHowTakeSmart2017.md",
+	  meta: [["type", "book"], ["title", "How to Take Smart Notes"], ["authors", "Ahrens, Sönke"], ["year", "2017"]],
+	  key: "ahrensHowTakeSmart2017", att: "ahrensHowTakeSmart2017.azw3" },
+];
+const first = inbox[0];
+const steps = ["Read the file", "Looked it up", "Gave it a citekey", "Filed it"];
+
+const formats = [
+	{ name: "PDF", ext: ".pdf", reads: "A DOI, ISBN or PubMed ID in the first pages, plus the title and author. Without them, the byline under the title, and for a page printed from a browser, its URL and print date." },
+	{ name: "EPUB & Kobo", ext: ".epub · .kepub", reads: "The book’s own ISBN, title, authors, publisher and date, or the ISBN on its copyright page." },
+	{ name: "Kindle", ext: ".mobi · .azw · .azw3", reads: "The ISBN, title, authors, publisher and date in the book’s header, readable even when the book has DRM." },
+	{ name: "Word & ODT", ext: ".docx · .odt", reads: "The title and author, and a DOI or ISBN in the text." },
+];
+
+const cites = [
+	{ label: "Pandoc  [@key]", inline: "[@grahamHowGreatWork2023]", mono: true, bib: false, note: "Pandoc and Quarto read this with your exported CSL-JSON or BibTeX." },
+	{ label: "Wikilink  [[key]]", inline: "[[grahamHowGreatWork2023]]", mono: true, bib: false, note: "Links straight to the reference note in your vault." },
+	{ label: "Chicago author-date", inline: "(Graham 2023)", mono: false, bib: true, note: "Copy formatted citation, in Chicago or any CSL style in your vault." },
+];
+
+const features = [
+	{ t: "Turn highlights into notes", d: "Extract annotations groups a PDF’s highlights by page. Re-running updates only Stacks’ block, never your writing.", href: "docs/annotations/" },
+	{ t: "Read on a tablet, bring it home", d: "Set a note to reading and its PDF goes to your synced folder. When it returns changed, Stacks files it and pulls the highlights.", href: "docs/annotations/" },
+	{ t: "Find an open-access PDF", d: "Checks Unpaywall and the landing page, shows which copy it found, and attaches it only after you confirm.", href: "docs/find-pdf/" },
+	{ t: "Browse with Bases", d: "A starter base with a view for each reading status, unfiled references and anything missing a file.", href: "docs/batch-and-collections/" },
+	{ t: "Keep the library healthy", d: "A report of duplicate citekeys, broken links and orphaned files. Every repair shows a preview first.", href: "docs/maintenance/" },
+	{ t: "Capture offline, sync anywhere", d: "A clip saved without a connection waits in the inbox and is retried later, without filing a duplicate.", href: "docs/sync-and-mobile/" },
+];
+
+const guides = [
+	{ group: "Start here", links: [["Getting started", "docs/getting-started/"], ["Install", "docs/install/"], ["What Stacks does", "docs/features/"]] },
+	{ group: "Collect", links: [["Web Clipper", "docs/web-clipper/"], ["Files and the main file", "docs/attachments/"], ["Find PDF", "docs/find-pdf/"], ["Kindle highlights", "docs/kindle/"]] },
+	{ group: "Read & organize", links: [["Highlights and comments", "docs/annotations/"], ["Collections and batch edits", "docs/batch-and-collections/"], ["Searching", "docs/searching/"]] },
+	{ group: "Cite & maintain", links: [["Citing your sources", "docs/citing/"], ["Citation fields", "docs/citation-fields/"], ["Library health", "docs/maintenance/"]] },
+];
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stacks — a research library for Obsidian</title>
+<meta name="description" content="Stacks is a research library inside your Obsidian vault. Collect sources, read deeply, connect ideas and cite with confidence, as plain Markdown notes you own.">
+<link rel="canonical" href="https://jag3773.github.io/obsidian-stacks/">
+<link rel="icon" href={u("favicon.svg")} type="image/svg+xml">
+<link rel="apple-touch-icon" href={u("apple-touch-icon.png")}>
+<meta property="og:title" content="Stacks — a research library for Obsidian">
+<meta property="og:description" content="Your sources. Your ideas. One home.">
+<meta property="og:image" content="https://jag3773.github.io/obsidian-stacks/og-image.png">
+<meta property="og:url" content="https://jag3773.github.io/obsidian-stacks/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href={fonts}>
+<script is:inline>
+	// Share the docs' theme choice (Starlight stores it under this key).
+	(() => {
+		let t = "";
+		try { t = localStorage.getItem("starlight-theme") || ""; } catch {}
+		if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+		document.documentElement.dataset.theme = t;
+	})();
+</script>
+</head>
+<body>
+
+<header class="topbar">
+	<div class="wrap topbar-inner">
+		<a href={u()} class="brand" aria-label="Stacks home">
+			<img class="only-light" src={u("brand/stacks-logo-horizontal-light.svg")} alt="Stacks" width="110" height="36">
+			<img class="only-dark" src={u("brand/stacks-logo-horizontal-dark.svg")} alt="Stacks" width="110" height="36">
+		</a>
+		<nav aria-label="Main" class="nav">
+			<a href="#demo">How it works</a>
+			<a href="#formats">Formats</a>
+			<a href="#cite">Citing</a>
+			<a href="#zotero">From Zotero</a>
+			<a href={u("docs/getting-started/")}>Docs</a>
+		</nav>
+		<div class="actions">
+			<button type="button" class="icon-btn" id="theme-toggle" aria-label="Switch to dark mode">
+				<svg class="only-light" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M15 10.5A6.5 6.5 0 0 1 7.5 3a6.5 6.5 0 1 0 7.5 7.5z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/></svg>
+				<svg class="only-dark" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M3.7 14.3l1.4-1.4M12.9 5.1l1.4-1.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+			</button>
+			<a class="btn btn-line btn-sm" href={repo}>GitHub</a>
+			<a class="btn btn-strong btn-sm" href="#install">Install</a>
+		</div>
+	</div>
+</header>
+
+<main>
+<section id="top" class="wrap hero">
+	<div class="hero-copy">
+		<span class="eyebrow">OBSIDIAN PLUGIN · EARLY RELEASE</span>
+		<h1>Your sources.<br>Your ideas.<br>One home.</h1>
+		<p class="lede">Stacks is a research library inside your vault. Collect sources, read deeply, connect ideas and cite with confidence. Every reference is an ordinary Markdown note you keep, even without the plugin.</p>
+		<div id="install" class="row">
+			<a class="btn btn-signal" href="obsidian://show-plugin?id=stacks">Install from Community plugins</a>
+			<a class="btn btn-line" href={u("docs/getting-started/")}>Read the guide</a>
+		</div>
+		<p class="small muted">In Obsidian: Settings → Community plugins → Browse → search “Stacks”. <a href={u("docs/install/")}>Other ways to install</a></p>
+	</div>
+
+	<div id="demo" class="card demo">
+		<div class="demo-head mono">
+			<span>Inbox → References</span>
+			<span>Pick a file to watch Stacks file it</span>
+		</div>
+		<div class="demo-body">
+			<div class="inbox" role="group" aria-label="Files in the inbox">
+				{inbox.map((f, i) => (
+					<button type="button" class="inbox-item" data-index={i} aria-pressed={i === 0 ? "true" : "false"}>
+						<span class="mono tiny muted">{f.kind}</span>
+						<span class="inbox-file">{f.file}</span>
+					</button>
+				))}
+			</div>
+			<div class="result">
+				<ol class="steps" aria-label="Filing steps">
+					{steps.map((s) => <li class="done"><span class="bar"></span><span class="label">{s}</span></li>)}
+				</ol>
+				<div class="note">
+					<div class="note-path mono" id="note-path">References/{first.fileName}</div>
+					<div class="note-props mono" id="note-props" aria-live="polite">
+						{first.meta.map(([k, v]) => <div class="prop"><span class="muted">{k}</span><span>{v}</span></div>)}
+						<div class="prop"><span class="muted">citekey</span><span class="signal-ink">{first.key}</span></div>
+						<div class="prop"><span class="muted">attachments</span><span>[[{first.att}]]</span></div>
+					</div>
+				</div>
+				<p class="filed" id="filed"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="filed-text">Filed. {first.found}; the file sits beside its note.</span></p>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="band">
+	<div class="wrap flow">
+		<div><span class="mono tiny signal-ink">01 COLLECT</span><span>Paste an ISBN, DOI, arXiv ID or URL, or drop a file in your inbox.</span></div>
+		<div><span class="mono tiny signal-ink">02 READ</span><span>Highlights and comments become callouts in the note, linked to their page.</span></div>
+		<div><span class="mono tiny signal-ink">03 CONNECT</span><span>Link sources to projects, people and drafts with Obsidian’s own links and Bases.</span></div>
+		<div><span class="mono tiny signal-ink">04 CITE</span><span>Insert citekeys as you write; export CSL-JSON or BibTeX for Pandoc and Quarto.</span></div>
+	</div>
+</section>
+
+<section id="tour" class="wrap split" aria-labelledby="video-title">
+	<div class="split-copy">
+		<h2 id="video-title">See it in a minute.</h2>
+		<p class="body">A one-minute tour: your library in a Base, metadata and highlights in one note, a view for every stage of reading, and bringing a Zotero library across.</p>
+	</div>
+	<div class="split-wide">
+		<video class="video" controls preload="none" playsinline poster={u("media/stacks-overview-poster.jpg")} width="1280" height="720">
+			<source src={u("media/stacks-overview.mp4")} type="video/mp4">
+			<a href={u("media/stacks-overview.mp4")}>Watch the Stacks overview video</a>
+		</video>
+	</div>
+</section>
+
+<section id="formats" class="wrap split">
+	<div class="split-copy">
+		<h2>Every format your library comes in.</h2>
+		<p class="body">Not every library is a folder of PDFs. Stacks reads each file for an ISBN or DOI, looks it up, and files it beside its note. One reference holds every copy: the PDF, the EPUB, the chapter scan.</p>
+	</div>
+	<div class="split-wide">
+		<div role="tablist" aria-label="File formats" class="tabs">
+			{formats.map((f, i) => (
+				<button type="button" role="tab" id={`fmt-tab-${i}`} aria-controls="fmt-panel" aria-selected={i === 0 ? "true" : "false"} tabindex={i === 0 ? 0 : -1} data-index={i}>{f.name}</button>
+			))}
+		</div>
+		<div role="tabpanel" id="fmt-panel" aria-labelledby="fmt-tab-0" class="tabpanel">
+			<span class="mono small muted" id="fmt-ext">{formats[0].ext}</span>
+			<p id="fmt-reads">{formats[0].reads}</p>
+			<a href={u("docs/attachments/")}>Files and the main file →</a>
+		</div>
+	</div>
+</section>
+
+<section class="inverse">
+	<div class="wrap">
+		<h2>What a reference manager does, kept in plain notes.</h2>
+		<div class="tiles">
+			{features.map((f) => (
+				<a class="tile" href={u(f.href)}><span class="tile-title">{f.t}</span><span class="tile-body">{f.d}</span></a>
+			))}
+		</div>
+	</div>
+</section>
+
+<section id="cite" class="wrap split center">
+	<div class="split-copy">
+		<h2>Cite while you write.</h2>
+		<p class="body">Insert citation searches by citekey, title, author or year. Choose how it lands in your draft.</p>
+		<div role="radiogroup" aria-label="Citation style" class="pills">
+			{cites.map((c, i) => (
+				<button type="button" role="radio" aria-checked={i === 0 ? "true" : "false"} data-index={i} tabindex={i === 0 ? 0 : -1}>{c.label}</button>
+			))}
+		</div>
+	</div>
+	<div class="card draft split-wide">
+		<span class="mono tiny muted">Drafts/essay-on-craft.md</span>
+		<p class="draft-text">Ambitious projects rarely start from a plan; they start from noticing what nobody else is curious about <span class="cite mono" id="cite-inline">{cites[0].inline}</span>.</p>
+		<div class="bib" id="cite-bib" hidden>Graham, Paul. 2023. “How to Do Great Work.” https://paulgraham.com/greatwork.html.</div>
+		<span class="small muted" id="cite-note">{cites[0].note}</span>
+		<a href={u("docs/citing/")} class="small">Citing your sources →</a>
+	</div>
+</section>
+
+<section id="zotero" class="band">
+	<div class="wrap split center">
+		<div class="split-copy wide">
+			<span class="mono small signal-ink">COMING FROM ZOTERO?</span>
+			<h2>Bring your library. Keep your notes.</h2>
+			<p class="body">Import from Zotero reads a Better BibTeX JSON export, shows you what it will do, adds properties to the notes you already have without touching their text, and can be undone.</p>
+		</div>
+		<a class="btn btn-line" href={u("docs/migrating-from-zotero/")}>Migration guide →</a>
+	</div>
+</section>
+
+<section id="docs" class="wrap guides" aria-labelledby="guides-title">
+	<h2 id="guides-title">Find your way around.</h2>
+	<div class="guide-grid">
+		{guides.map((g) => (
+			<div>
+				<span class="mono tiny muted">{g.group.toUpperCase()}</span>
+				<ul>{g.links.map(([t, h]) => <li><a href={u(h)}>{t}</a></li>)}</ul>
+			</div>
+		))}
+	</div>
+</section>
+</main>
+
+<footer class="wrap footer">
+	<span class="footer-brand">
+		<img class="only-light" src={u("brand/stacks-mark-light.svg")} alt="" width="26" height="20">
+		<img class="only-dark" src={u("brand/stacks-mark-dark.svg")} alt="" width="26" height="20">
+		Stacks · an Obsidian plugin · MIT licence
+	</span>
+	<span class="footer-links">
+		<a href={u("docs/getting-started/")}>Docs</a>
+		<a href={u("docs/roadmap/")}>Roadmap</a>
+		<a href={`${repo}/releases`}>Releases</a>
+		<a href={`${repo}/issues`}>Issues</a>
+		<a href={repo}>GitHub</a>
+	</span>
+</footer>
+
+<script is:inline define:vars={{ inbox, steps, formats, cites }}>
+	// Theme toggle, shared with the docs.
+	const root = document.documentElement;
+	const toggle = document.getElementById("theme-toggle");
+	const syncLabel = () => toggle.setAttribute("aria-label", root.dataset.theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+	syncLabel();
+	toggle.addEventListener("click", () => {
+		root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+		try { localStorage.setItem("starlight-theme", root.dataset.theme); } catch {}
+		syncLabel();
+	});
+
+	// Inbox demo.
+	const items = [...document.querySelectorAll(".inbox-item")];
+	const stepEls = [...document.querySelectorAll(".steps li")];
+	const props = document.getElementById("note-props");
+	const path = document.getElementById("note-path");
+	const filed = document.getElementById("filed");
+	const filedText = document.getElementById("filed-text");
+	const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+	let timer = null;
+
+	function prop(k, v, cls) {
+		const row = document.createElement("div");
+		row.className = "prop";
+		const a = document.createElement("span");
+		a.className = "muted";
+		a.textContent = k;
+		const b = document.createElement("span");
+		if (cls) b.className = cls;
+		b.textContent = v;
+		row.append(a, b);
+		return row;
+	}
+
+	function render(f, step) {
+		stepEls.forEach((el, i) => el.classList.toggle("done", i < step));
+		path.textContent = "References/" + f.fileName;
+		const rows = [];
+		if (step < 2) {
+			const wait = document.createElement("span");
+			wait.className = "muted";
+			wait.textContent = f.found + "…";
+			rows.push(wait);
+		} else {
+			f.meta.forEach(([k, v]) => rows.push(prop(k, v)));
+		}
+		if (step >= 3) rows.push(prop("citekey", f.key, "signal-ink"));
+		if (step >= 4) rows.push(prop("attachments", f.att ? "[[" + f.att + "]]" : "— (web page)"));
+		props.replaceChildren(...rows);
+		filed.hidden = step < 4;
+		filedText.textContent = "Filed. " + f.found + "; the file sits beside its note.";
+	}
+
+	items.forEach((btn) => btn.addEventListener("click", () => {
+		const f = inbox[Number(btn.dataset.index)];
+		items.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+		clearInterval(timer);
+		if (reduce) { render(f, 4); return; }
+		let step = 0;
+		render(f, step);
+		timer = setInterval(() => {
+			step += 1;
+			render(f, step);
+			if (step >= 4) clearInterval(timer);
+		}, 600);
+	}));
+
+	// Arrow-key roving for tabs and radio pills.
+	function roving(buttons, select) {
+		buttons.forEach((btn, i) => {
+			btn.addEventListener("click", () => select(i));
+			btn.addEventListener("keydown", (e) => {
+				const d = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+				if (!d) return;
+				e.preventDefault();
+				const n = (i + d + buttons.length) % buttons.length;
+				select(n);
+				buttons[n].focus();
+			});
+		});
+	}
+
+	const tabs = [...document.querySelectorAll('[role="tab"]')];
+	const panel = document.getElementById("fmt-panel");
+	roving(tabs, (i) => {
+		tabs.forEach((t, j) => { t.setAttribute("aria-selected", String(i === j)); t.tabIndex = i === j ? 0 : -1; });
+		panel.setAttribute("aria-labelledby", tabs[i].id);
+		document.getElementById("fmt-ext").textContent = formats[i].ext;
+		document.getElementById("fmt-reads").textContent = formats[i].reads;
+	});
+
+	const pills = [...document.querySelectorAll('[role="radio"]')];
+	roving(pills, (i) => {
+		pills.forEach((p, j) => { p.setAttribute("aria-checked", String(i === j)); p.tabIndex = i === j ? 0 : -1; });
+		const c = cites[i];
+		const inline = document.getElementById("cite-inline");
+		inline.textContent = c.inline;
+		inline.classList.toggle("mono", c.mono);
+		document.getElementById("cite-bib").hidden = !c.bib;
+		document.getElementById("cite-note").textContent = c.note;
+	});
+</script>
+
+<style is:global>
+	:root {
+		--bg: #f4f5f7; --surface: #ffffff; --surface-2: #fbfcfd; --ink: #0f1419; --body: #3d4652; --muted: #5a6472;
+		--line: #dadfe6; --line-soft: #eef1f4; --track: #e3e7ec; --strong-bg: #0f1419; --on-strong: #ffffff;
+		--inv-bg: #0f1419; --inv-line: #2a323d; --inv-text: #f4f5f7; --inv-muted: #aeb7c3;
+		--sel-bg: #f4f5f7; --sel-border: #0f1419; --signal: #ff5a1f; --signal-ink: #b93a0b;
+		--mark-tint: #ffe9df; --mark-text: #8a2a06; --filed: #0e7a5e;
+		color-scheme: light;
+	}
+	:root[data-theme="dark"] {
+		--bg: #0b0e12; --surface: #12171d; --surface-2: #0f1318; --ink: #eef1f4; --body: #b6bfca; --muted: #8e98a6;
+		--line: #252d37; --line-soft: #1b2129; --track: #252d37; --strong-bg: #eef1f4; --on-strong: #0b0e12;
+		--inv-bg: #12171d; --inv-line: #252d37; --inv-text: #eef1f4; --inv-muted: #a3adba;
+		--sel-bg: #1b2129; --sel-border: #eef1f4; --signal-ink: #ff8a5c;
+		--mark-tint: #3a1a0e; --mark-text: #ffb08f; --filed: #4fd1a5;
+		color-scheme: dark;
+	}
+	:root[data-theme="dark"] .only-light, :root:not([data-theme="dark"]) .only-dark { display: none !important; }
+
+	* { box-sizing: border-box; }
+	body { margin: 0; background: var(--bg); color: var(--ink); font-family: Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+	a { color: var(--signal-ink); }
+	a:hover { color: var(--ink); }
+	button { font: inherit; cursor: pointer; }
+	:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+	h1, h2 { font-family: "Space Grotesk", Inter, sans-serif; margin: 0; }
+	h2 { font-size: clamp(30px, 4vw, 40px); line-height: 1.05; letter-spacing: -0.025em; }
+	.mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+	.tiny { font-size: 12px; letter-spacing: 0.04em; }
+	.small { font-size: 14px; }
+	.muted { color: var(--muted); }
+	.signal-ink { color: var(--signal-ink); }
+	.body { margin: 0; font-size: 17px; line-height: 1.6; color: var(--body); }
+	.wrap { max-width: 1200px; margin: 0 auto; padding-left: 24px; padding-right: 24px; }
+	.row { display: flex; flex-wrap: wrap; gap: 12px; }
+	.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+
+	.btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 8px; font-weight: 600; text-decoration: none; }
+	.btn-sm { min-height: 44px; padding: 0 16px; font-size: 14px; }
+	.btn-signal { background: var(--signal); color: #0f1419; }
+	.btn-signal:hover { color: #0f1419; filter: brightness(1.06); }
+	.btn-strong { background: var(--strong-bg); color: var(--on-strong); }
+	.btn-strong:hover { color: var(--on-strong); }
+	.btn-line { border: 1px solid var(--ink); color: var(--ink); }
+	.btn-sm.btn-line { border-color: var(--line); font-weight: 500; }
+
+	.topbar { background: var(--surface); border-bottom: 1px solid var(--line); }
+	.topbar-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px; padding-top: 14px; padding-bottom: 14px; }
+	.brand { display: flex; align-items: center; min-height: 44px; }
+	.brand img { height: 34px; width: auto; }
+	.nav { display: flex; flex-wrap: wrap; gap: 0 24px; flex: 1 1 auto; font-size: 15px; }
+	.nav a { color: var(--body); text-decoration: none; padding: 10px 0; }
+	.nav a:hover { color: var(--ink); }
+	.actions { display: flex; gap: 10px; align-items: center; }
+	.icon-btn { width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); }
+
+	.hero { display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start; padding-top: 72px; padding-bottom: 56px; }
+	.hero-copy { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+	.eyebrow { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--muted); letter-spacing: 0.04em; }
+	.hero h1 { font-weight: 700; font-size: clamp(44px, 6vw, 76px); line-height: 0.98; letter-spacing: -0.035em; }
+	.lede { margin: 0; font-size: 19px; line-height: 1.55; color: var(--body); max-width: 34em; }
+	.hero p.small { margin: 0; }
+
+	.demo { flex: 1 1 520px; min-width: 0; overflow: hidden; }
+	.demo-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+	.demo-body { display: flex; flex-wrap: wrap; }
+	.inbox { flex: 1 1 200px; min-width: 0; padding: 10px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--line-soft); }
+	.inbox-item { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; min-height: 56px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line-soft); background: var(--surface); color: var(--ink); }
+	.inbox-item[aria-pressed="true"] { border-color: var(--sel-border); background: var(--sel-bg); }
+	.inbox-file { font-size: 14px; font-weight: 500; word-break: break-all; }
+	.result { flex: 2 1 300px; min-width: 0; padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+	.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+	.steps li { display: flex; flex-direction: column; gap: 6px; }
+	.steps .bar { height: 4px; border-radius: 2px; background: var(--track); transition: background 0.2s; }
+	.steps .label { font-size: 12px; line-height: 1.3; color: var(--muted); }
+	.steps li.done .bar { background: var(--signal); }
+	.steps li.done .label { color: var(--ink); }
+	.note { border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+	.note-path { padding: 10px 14px; border-bottom: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); }
+	.note-props { padding: 14px; display: flex; flex-direction: column; gap: 8px; min-height: 196px; font-size: 13px; line-height: 1.5; }
+	.prop { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+	.prop span:last-child { word-break: break-word; }
+	.filed { margin: 0; font-size: 14px; color: var(--filed); display: flex; align-items: center; gap: 8px; }
+	.filed[hidden] { display: none; }
+
+	.band { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+	.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+	.flow > div { padding: 28px 24px 28px 0; display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.5; }
+	.flow > div + div { padding-left: 24px; border-left: 1px solid var(--line-soft); }
+
+	.split { display: flex; flex-wrap: wrap; gap: 48px; padding-top: 88px; padding-bottom: 88px; }
+	.split.center { align-items: center; }
+	.band .split { padding-top: 64px; padding-bottom: 64px; justify-content: space-between; }
+	.split-copy { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+	.split-copy.wide { flex-basis: 420px; max-width: 720px; }
+	.split-wide { flex: 1.4 1 460px; min-width: 0; }
+	.video { width: 100%; height: auto; border-radius: 14px; border: 1px solid var(--line); background: #0f1419; display: block; }
+
+	.tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+	.tabs button { min-height: 48px; padding: 0 18px; border: none; border-bottom: 3px solid transparent; background: transparent; font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 16px; color: var(--muted); }
+	.tabs button[aria-selected="true"] { border-bottom-color: var(--signal); color: var(--ink); }
+	.tabpanel { padding: 28px 0 0; display: flex; flex-direction: column; gap: 14px; }
+	.tabpanel p { margin: 0; font-size: 20px; line-height: 1.5; }
+
+	.inverse { background: var(--inv-bg); color: var(--inv-text); border-top: 1px solid var(--inv-line); border-bottom: 1px solid var(--inv-line); }
+	.inverse .wrap { padding-top: 88px; padding-bottom: 88px; display: flex; flex-direction: column; gap: 40px; }
+	.inverse h2 { max-width: 18em; }
+	.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1px; background: var(--inv-line); border: 1px solid var(--inv-line); }
+	.tile { background: var(--inv-bg); padding: 28px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: var(--inv-text); }
+	.tile:hover { color: var(--inv-text); background: color-mix(in srgb, var(--inv-bg) 88%, var(--signal)); }
+	.tile-title { font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 19px; }
+	.tile-body { font-size: 15px; line-height: 1.55; color: var(--inv-muted); }
+
+	.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+	.pills button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 500; font-size: 14px; white-space: pre; }
+	.pills button[aria-checked="true"] { border-color: var(--strong-bg); background: var(--strong-bg); color: var(--on-strong); }
+	.draft { padding: 28px; display: flex; flex-direction: column; gap: 18px; }
+	.draft-text { margin: 0; font-size: 19px; line-height: 1.6; }
+	.cite { background: var(--mark-tint); color: var(--mark-text); padding: 2px 6px; border-radius: 4px; font-size: 16px; }
+	.bib { border-top: 1px solid var(--line-soft); padding-top: 14px; font-size: 15px; line-height: 1.55; color: var(--body); }
+
+	.guides { padding-top: 88px; padding-bottom: 72px; display: flex; flex-direction: column; gap: 32px; }
+	.guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
+	.guide-grid ul { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+	.guide-grid a { display: inline-flex; min-height: 36px; align-items: center; font-size: 16px; text-decoration: none; }
+	.guide-grid a:hover { text-decoration: underline; }
+
+	.footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; padding-top: 24px; padding-bottom: 48px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+	.footer-brand { display: flex; align-items: center; gap: 10px; }
+	.footer-links { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+	.footer-links a { display: inline-flex; min-height: 44px; align-items: center; }
+
+	@media (max-width: 640px) {
+		.nav a:not(:last-child) { display: none; }
+		.inbox { border-right: none; border-bottom: 1px solid var(--line-soft); }
+		.flow > div + div { padding-left: 0; border-left: none; border-top: 1px solid var(--line-soft); }
+		.hero { padding-top: 48px; }
+	}
+	@media (prefers-reduced-motion: reduce) { .steps .bar { transition: none; } }
+</style>
+</body>
+</html>

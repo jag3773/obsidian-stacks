@@ -1,0 +1,44 @@
+/* Index palette for the Starlight docs. Starlight's dark theme is :root;
+   light is :root[data-theme="light"]. "white" is the text colour, "black" the page. */
+:root {
+	--sl-font: "Inter", system-ui, sans-serif;
+	--sl-font-system-mono: "JetBrains Mono", ui-monospace, monospace;
+
+	--sl-color-accent-low: #3a1a0e;
+	--sl-color-accent: #ff8a5c;
+	--sl-color-accent-high: #ffb08f;
+	--sl-color-white: #eef1f4;
+	--sl-color-gray-1: #d5dae1;
+	--sl-color-gray-2: #b6bfca;
+	--sl-color-gray-3: #8e98a6;
+	--sl-color-gray-4: #5a6472;
+	--sl-color-gray-5: #252d37;
+	--sl-color-gray-6: #12171d;
+	--sl-color-black: #0b0e12;
+}
+
+:root[data-theme="light"] {
+	--sl-color-accent-low: #ffe9df;
+	--sl-color-accent: #b93a0b;
+	--sl-color-accent-high: #8a2a06;
+	--sl-color-white: #0f1419;
+	--sl-color-gray-1: #1c232c;
+	--sl-color-gray-2: #3d4652;
+	--sl-color-gray-3: #5a6472;
+	--sl-color-gray-4: #8e98a6;
+	--sl-color-gray-5: #dadfe6;
+	--sl-color-gray-6: #eef1f4;
+	--sl-color-gray-7: #f4f5f7;
+	--sl-color-black: #ffffff;
+}
+
+h1,
+.sl-markdown-content :is(h2, h3, h4) {
+	font-family: "Space Grotesk", var(--sl-font);
+	letter-spacing: -0.02em;
+}
+
+.site-title img {
+	height: 1.9rem;
+	width: auto;
+}

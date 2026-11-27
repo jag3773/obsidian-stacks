@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Index — palette and components</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B93A0B}a:hover{color:#8A2A06}
+button{font:inherit;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 1280px; height: 1840px; box-sizing: border-box; padding: 64px; background: #F4F5F7; color: #0F1419; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 48px;">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; border-bottom: 1px solid #DADFE6; padding-bottom: 24px;">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5A6472;">DIRECTION A</span>
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 56px; letter-spacing: -0.03em; line-height: 1;">Index</h1>
+</div>
+<p style="margin: 0; max-width: 520px; font-size: 16px; line-height: 1.55; color: #3D4652;">A precise, catalog-like system. Cool paper ground (or near-black in dark mode), one signal orange used sparingly for what Stacks just did. Monospace carries the data: properties, citekeys, file names.</p>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 22px;">Palette</h2>
+<div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px;">
+<sc-for list="{{core}}" as="c" hint-placeholder-count="8">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<div style="height: 96px; border-radius: 10px; background: {{c.hex}}; border: 1px solid #DADFE6;"></div>
+<span style="font-weight: 600; font-size: 14px;">{{c.name}}</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #3D4652;">{{c.hex}}</span>
+<span style="font-size: 12px; line-height: 1.4; color: #5A6472;">{{c.role}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+<span style="font-size: 13px; color: #5A6472; margin-right: 6px;">Status tints</span>
+<sc-for list="{{statuses}}" as="s" hint-placeholder-count="5">
+<span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: {{s.bg}}; color: {{s.fg}}; font-family: 'JetBrains Mono', monospace; font-size: 12px;"><span style="width: 6px; height: 6px; border-radius: 3px; background: {{s.fg}};"></span>{{s.name}}</span>
+</sc-for>
+<span style="font-size: 13px; color: #5A6472; margin-left: 6px;">Stacks’ default statuses. Every text colour passes 4.5:1 on its tint.</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px; padding: 28px; border-radius: 16px; background: #0B0E12; color: #EEF1F4;">
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px;">
+<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 22px;">Dark mode</h2>
+<span style="font-size: 13px; color: #8E98A6;">Same roles, same signal. Ink and paper swap; the orange text shade lifts to stay readable.</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px;">
+<sc-for list="{{darkCore}}" as="c" hint-placeholder-count="8">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<div style="height: 72px; border-radius: 10px; background: {{c.hex}}; border: 1px solid #252D37;"></div>
+<span style="font-weight: 600; font-size: 14px;">{{c.name}}</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #B6BFCA;">{{c.hex}}</span>
+<span style="font-size: 12px; line-height: 1.4; color: #8E98A6;">{{c.role}}</span>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding-top: 4px;">
+<span style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 8px; background: {{accent}}; color: #0F1419; font-weight: 600; font-size: 14px;">Install</span>
+<span style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 8px; background: #EEF1F4; color: #0B0E12; font-weight: 600; font-size: 14px;">Add reference</span>
+<span style="display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #EEF1F4; color: #EEF1F4; font-weight: 600; font-size: 14px;">Read the guide</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #FF8A5C; margin-left: 8px;">citekey: carrShallows2010</span>
+<span style="padding: 2px 8px; border-radius: 4px; background: #3A1A0E; color: #FFB08F; font-family: 'JetBrains Mono', monospace; font-size: 13px;">[@grahamHowGreatWork2023]</span>
+<span style="color: #4FD1A5; font-size: 14px;">Filed.</span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 20px; background: #FFFFFF; border: 1px solid #DADFE6; border-radius: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6472;">DISPLAY · Space Grotesk 700</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 56px; letter-spacing: -0.035em; line-height: 1;">One home.</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 32px; letter-spacing: -0.02em;">Cite while you write.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 20px; background: #FFFFFF; border: 1px solid #DADFE6; border-radius: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6472;">BODY · Inter 400/600</span>
+<span style="font-size: 19px; line-height: 1.55;">Every reference is an ordinary Markdown note.</span>
+<span style="font-size: 15px; line-height: 1.55; color: #3D4652;">Secondary copy sits at 15px in slate, never lighter than #5A6472.</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 20px; background: #FFFFFF; border: 1px solid #DADFE6; border-radius: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6472;">DATA · JetBrains Mono 400</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 15px;">citekey: <span style="color: #B93A0B;">carrShallows2010</span></span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5A6472;">References/attachments/carrShallows2010.epub</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px;">
+<h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 22px;">Components</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px;">
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #FFFFFF; border: 1px solid #DADFE6; border-radius: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6472;">BUTTONS</span>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: {{accent}}; color: #0F1419; font-weight: 600;">Install</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: #0F1419; color: #FFFFFF; font-weight: 600;">Add reference</button>
+<button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid #0F1419; background: transparent; color: #0F1419; font-weight: 600;">Read the guide</button>
+<button type="button" style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: none; background: transparent; color: #B93A0B; font-weight: 600;">Preview changes →</button>
+</div>
+<span style="font-size: 13px; line-height: 1.5; color: #5A6472;">Orange is for one primary action per view. Text on orange stays ink, not white.</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #FFFFFF; border: 1px solid #DADFE6; border-radius: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6472;">REFERENCE CARD · click the status</span>
+<div style="border: 1px solid #DADFE6; border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+<div style="display: flex; flex-direction: column; gap: 2px;">
+<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 18px;">The Shallows</span>
+<span style="font-size: 14px; color: #5A6472;">Nicholas Carr · 2010 · book</span>
+</div>
+<button type="button" onClick="{{cycle}}" aria-label="Status: {{cur.name}}. Click to change." style="min-height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 999px; border: none; background: {{cur.bg}}; color: {{cur.fg}}; font-family: 'JetBrains Mono', monospace; font-size: 12px;"><span style="width: 6px; height: 6px; border-radius: 3px; background: {{cur.fg}};"></span>{{cur.name}}</button>
+</div>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #B93A0B;">@carrShallows2010</span>
+<span style="font-size: 13px; line-height: 1.45; color: #3D4652;">{{cur.what}}</span>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #FFFFFF; border: 1px solid #DADFE6; border-radius: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6472;">PROPERTY BLOCK</span>
+<div style="border: 1px solid #DADFE6; border-radius: 10px; background: #FBFCFD; padding: 14px; display: flex; flex-direction: column; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+<div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px;"><span style="color: #5A6472;">title</span><span>The Extended Mind</span></div>
+<div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px;"><span style="color: #5A6472;">authors</span><span>Clark; Chalmers</span></div>
+<div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px;"><span style="color: #5A6472;">doi</span><span>10.1093/analys/58.1.7</span></div>
+<div style="display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px;"><span style="color: #5A6472;">citekey</span><span style="color: #B93A0B;">clarkExtendedMind1998</span></div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #FFFFFF; border: 1px solid #DADFE6; border-radius: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6472;">INBOX ITEM · default / selected</span>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 8px; border: 1px solid #EEF1F4;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6472;">EPUB</span><span style="font-size: 14px; font-weight: 500;">the-shallows.epub</span></div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 8px; border: 1px solid #0F1419; background: #F4F5F7;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5A6472;">PDF</span><span style="font-size: 14px; font-weight: 500;">clark-chalmers.pdf</span></div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+<span style="height: 4px; border-radius: 2px; background: {{accent}};"></span><span style="height: 4px; border-radius: 2px; background: {{accent}};"></span><span style="height: 4px; border-radius: 2px; background: #E3E7EC;"></span><span style="height: 4px; border-radius: 2px; background: #E3E7EC;"></span>
+</div>
+<span style="font-size: 13px; color: #5A6472;">Step bar: done steps take the signal colour.</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #FFFFFF; border: 1px solid #DADFE6; border-radius: 12px;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5A6472;">ANNOTATION CALLOUT</span>
+<div style="border-radius: 8px; background: #FFF4EE; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px;">
+<span style="font-size: 13px; font-weight: 600; color: #8A2A06; display: flex; align-items: center; gap: 6px;"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 11l1-3 5-5 2 2-5 5-3 1z" stroke="#8A2A06" stroke-width="1.4" fill="none" stroke-linejoin="round"></path></svg>Highlight · p. 12</span>
+<span style="font-size: 14px; line-height: 1.5; color: #3D4652;">[Your highlighted passage appears here, linked back to its page.]</span>
+</div>
+<span style="font-size: 13px; color: #5A6472;">Mirrors the callouts Extract annotations writes into a note.</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #0F1419; border-radius: 12px; color: #F4F5F7;">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #AEB7C3;">FEATURE TILE · inverse</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 19px;">Keep the library healthy</span>
+<span style="font-size: 14px; line-height: 1.55; color: #AEB7C3;">Duplicate citekeys, broken links and orphaned files, with a preview before every repair.</span>
+<a href="#" style="color: {{accent}}; font-weight: 600; font-size: 14px; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center;">Library health guide →</a>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#FF5A1F","options":["#FF5A1F","#2F6BFF","#12B886","#0F1419"]},"$preview":{"width":1280,"height":1840}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { s: 0 }; }
+  renderVals() {
+    const accent = this.props.accent ?? '#FF5A1F';
+    const statuses = [
+      { name: 'queued', bg: '#EEF1F4', fg: '#3D4652', what: 'Default status for a new reference.' },
+      { name: 'reading', bg: '#FFE9DF', fg: '#8A2A06', what: 'Sends the PDF to your tablet folder (desktop).' },
+      { name: 'reviewing', bg: '#E3ECFF', fg: '#1D44A8', what: 'Set when the PDF comes back with changes; highlights are extracted.' },
+      { name: 'processed', bg: '#DDF4EA', fg: '#0B5E48', what: 'You have finished with it.' },
+      { name: 'shelved', bg: '#F1ECE4', fg: '#5C4A2E', what: 'Default status for web clips.' }
+    ];
+    const core = [
+      { name: 'Ink', hex: '#0F1419', role: 'Text, dark buttons, inverse sections' },
+      { name: 'Ground', hex: '#F4F5F7', role: 'Page background' },
+      { name: 'Surface', hex: '#FFFFFF', role: 'Cards, header, demos' },
+      { name: 'Line', hex: '#DADFE6', role: 'Borders and rules' },
+      { name: 'Slate', hex: '#5A6472', role: 'Secondary text, labels' },
+      { name: 'Signal', hex: accent, role: 'One primary action, progress' },
+      { name: 'Signal ink', hex: '#B93A0B', role: 'Citekeys and links on light' },
+      { name: 'Filed', hex: '#0E7A5E', role: 'Success, filed confirmations' }
+    ];
+    const darkCore = [
+      { name: 'Ground', hex: '#0B0E12', role: 'Page background' },
+      { name: 'Surface', hex: '#12171D', role: 'Cards, header, demos' },
+      { name: 'Line', hex: '#252D37', role: 'Borders, step track' },
+      { name: 'Paper', hex: '#EEF1F4', role: 'Text, light buttons' },
+      { name: 'Body', hex: '#B6BFCA', role: 'Paragraphs' },
+      { name: 'Slate', hex: '#8E98A6', role: 'Labels, secondary' },
+      { name: 'Signal ink', hex: '#FF8A5C', role: 'Citekeys and links' },
+      { name: 'Filed', hex: '#4FD1A5', role: 'Success' }
+    ];
+    const cur = statuses[this.state.s];
+    return { accent, core, darkCore, statuses, cur, cycle: () => this.setState({ s: (this.state.s + 1) % statuses.length }) };
+  }
+}
+</script>
+</body>
+</html>

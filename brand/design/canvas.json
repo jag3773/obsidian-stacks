@@ -1,0 +1,20 @@
+{
+  "v": 3,
+  "createdOnFiles": {"v": 1, "at": "2026-11-26T17:00:00Z"},
+  "title": "Stacks Web Directions",
+  "launch": {"view": "canvas"},
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 2700, "title": "A · Index — landing page", "expand": "fill", "is_interactive": true},
+    "A-System.dc.html": {"x": 1520, "y": 0, "w": 1280, "h": 1840, "title": "A · Index — palette & components", "is_interactive": true},
+    "Logo.dc.html": {"x": 2880, "y": 0, "w": 1280, "h": 1900, "title": "A · Index — logo package"},
+    "B-Landing.dc.html": {"x": 0, "y": 3120, "w": 1440, "h": 2700, "title": "B · Night Shelf — landing page", "expand": "fill", "is_interactive": true},
+    "B-System.dc.html": {"x": 1520, "y": 3120, "w": 1280, "h": 1500, "title": "B · Night Shelf — palette & components", "is_interactive": true}
+  },
+  "order": ["Main.dc.html", "A-System.dc.html", "Logo.dc.html", "B-Landing.dc.html", "B-System.dc.html"],
+  "notes": {
+    "titleA": {"x": 0, "y": -300, "text": "Direction A · Index — light and dark, technical, the library as a precise instrument", "kind": "title1", "maxW": 4160},
+    "titleB": {"x": 0, "y": 2820, "text": "Direction B · Night Shelf — dark, focused, the vault as a command line for thinking", "kind": "title1", "maxW": 2800}
+  },
+  "designSystems": []
+}

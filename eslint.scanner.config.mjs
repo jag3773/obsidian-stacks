@@ -76,6 +76,8 @@ export default defineConfig([
 
 	globalIgnores([
 		"main.js",
+		// The website (Astro) is not part of the plugin the directory scans.
+		"site/**",
 		"**/*.min.js",
 		"**/{dist,build,out,release}/**/*.{js,cjs,mjs,jsx}",
 		"node_modules",

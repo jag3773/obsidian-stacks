@@ -1,0 +1,17 @@
+{
+  "name": "stacks-site",
+  "private": true,
+  "type": "module",
+  "description": "The Stacks website and documentation, built from ../docs.",
+  "scripts": {
+    "sync-docs": "node scripts/sync-docs.mjs",
+    "dev": "npm run sync-docs && astro dev",
+    "build": "npm run sync-docs && astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.43.2",
+    "astro": "^7.4.13",
+    "sharp": "^0.35.5"
+  }
+}
