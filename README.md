@@ -21,7 +21,7 @@
 
 > **The guides live on the website: [jag3773.github.io/obsidian-stacks](https://jag3773.github.io/obsidian-stacks/).** This README is the short version.
 
-https://github.com/user-attachments/assets/ced9d074-954a-471c-9409-3585323aaea8
+https://github.com/user-attachments/assets/abbcea0e-a179-428b-b4ab-879979acb93b
 
 Stacks brings the work of a reference manager into your vault: collect sources, read deeply, connect ideas and cite with confidence. Every reference is an ordinary Markdown note, and its PDFs, ebooks and documents live in ordinary folders. The library stays useful if you remove the plugin.
 
