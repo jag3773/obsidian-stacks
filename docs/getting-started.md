@@ -19,7 +19,7 @@ When a Base requires one folder, Stacks can use it as the references folder. Neg
 <details>
 <summary>Example Base to customize</summary>
 
-This example assumes the default folder and property names. The settings command generates a Base using your own mappings.
+This example assumes the default folder and property names. **Create base** writes a fuller version using your own mappings: its **File** column follows your **Preferred formats** and also reads the `pdf` property that Stacks wrote before 0.5. The shorter **File** formula here links the first file in a reference's `attachments` that exists in the vault.
 
 ```yaml
 filters:
@@ -28,18 +28,21 @@ filters:
     - file.hasProperty("citekey")
 formulas:
   name: file.asLink(title)
+  file: if(if(attachments.isEmpty(), false, list(attachments).filter(value.asFile()).length > 0), list(attachments).filter(value.asFile())[0].asFile().asLink("📄"), "")
 properties:
   formula.name:
     displayName: Title
+  formula.file:
+    displayName: File
 views:
   - type: table
     name: Library
     groupBy:
       property: status
       direction: ASC
-    order: [formula.name, authors, year, type, pdf, status]
+    order: [formula.name, formula.file, authors, year, type, citekey, collections]
   - type: table
-    name: Queue
+    name: Queued
     filters: 'status == "queued"'
     order: [formula.name, authors, year, added]
 ```

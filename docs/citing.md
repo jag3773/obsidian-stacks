@@ -81,7 +81,12 @@ This path uses only the vault, Stacks and [Pandoc](https://pandoc.org) (or [Quar
    ---
    ```
 
-   then run `quarto render Drafts/essay.md --to docx` (or `html`, `pdf`). Pandoc reads the same `bibliography` and `csl` properties, so with them in the note `pandoc Drafts/essay.md --citeproc -o essay.docx` is enough when run from the draft's folder.
+   then run `quarto render Drafts/essay.md --to docx` (or `html`, `pdf`). Pandoc reads the same `bibliography` and `csl` properties, but it reads those paths from the folder you run it in, so run it from the draft's folder:
+
+   ```sh
+   cd Drafts
+   pandoc essay.md --citeproc -o essay.docx
+   ```
 
 The reference list is added at the end of the document. Put `::: {#refs}` and `:::` on their own lines where you want it instead.
 

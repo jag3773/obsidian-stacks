@@ -39,7 +39,7 @@ Stacks brings the work of a reference manager into your vault: collect sources, 
 
 See [everything Stacks does](https://jag3773.github.io/obsidian-stacks/docs/features/).
 
-> **Early release.** Stacks is in Obsidian's community plugin directory, and has been tested on its author's own vault so far. Keep a backup of your vault, and [tell us what you find](https://github.com/jag3773/obsidian-stacks/issues/new).
+> **Keep a backup.** Stacks renames, moves and edits notes in your vault. It previews its bigger changes before making them, and imports can be undone, but keep a backup of your vault as you would with any plugin that changes your files. [Tell us what you find](https://github.com/jag3773/obsidian-stacks/issues/new).
 
 ## Install
 
